@@ -14,14 +14,12 @@ class AHJFilter(filters.FilterSet, rf_filters.SearchFilter):
     ElectricCode__in = CharInFilter(field_name='ElectricCode', lookup_expr='in')
     FireCode__in = CharInFilter(field_name='FireCode', lookup_expr='in')
     ResidentialCode__in = CharInFilter(field_name='ResidentialCode', lookup_expr='in')
-    City__in = df_filters.CharFilter(field_name='address__City', lookup_expr='istartswith')
-    County__in = df_filters.CharFilter(field_name='address__County', lookup_expr='istartswith')
-    Country__in = df_filters.CharFilter(field_name='address__Country', lookup_expr='istartswith')
-    StateProvince__in = df_filters.CharFilter(field_name='address__StateProvince', lookup_expr='istartswith')
-    ZipPostalCode__in = df_filters.CharFilter(field_name='address__ZipPostalCode', lookup_expr='istartswith')
+    City__in = df_filters.CharFilter(field_name='address__City', lookup_expr='icontains')
+    County__in = df_filters.CharFilter(field_name='address__County', lookup_expr='icontains')
+    Country__in = df_filters.CharFilter(field_name='address__Country', lookup_expr='icontains')
+    StateProvince__in = df_filters.CharFilter(field_name='address__StateProvince', lookup_expr='icontains')
+    ZipPostalCode__in = df_filters.CharFilter(field_name='address__ZipPostalCode', lookup_expr='icontains')
 
     class Meta:
         model = AHJ
-        fields = {
-            # 'address__City': ['icontains', 'istartswith']
-        }
+        fields = '__all__'

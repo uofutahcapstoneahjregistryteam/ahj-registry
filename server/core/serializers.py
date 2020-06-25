@@ -3,6 +3,8 @@ from .models import *
 
 
 class LocationSerializer(serializers.ModelSerializer):
+    LocationID = serializers.IntegerField(source='Address_id', required=False)
+
     class Meta:
         model = Location
         fields = [
@@ -13,7 +15,8 @@ class LocationSerializer(serializers.ModelSerializer):
             'LocationDeterminationMethod',
             'LocationType',
             'Longitude',
-            'Description'
+            'Description',
+            'LocationID'
         ]
 
     def create(self, address, validated_data):
@@ -32,6 +35,7 @@ class LocationSerializer(serializers.ModelSerializer):
 
 
 class AddressSerializer(serializers.ModelSerializer):
+    AddressID = serializers.IntegerField(source='id', required=False)
     Location = LocationSerializer(source='location', many=False, required=False, allow_null=True)
 
     class Meta:
@@ -49,7 +53,7 @@ class AddressSerializer(serializers.ModelSerializer):
             'ZipPostalCode',
             'Location',
             'Description',
-            'id'
+            'AddressID'
         ]
 
     def create(self, model_object, model_object_type, validated_data):
@@ -93,8 +97,8 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class ContactSerializer(serializers.ModelSerializer):
+    ContactID = serializers.IntegerField(source='id', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
-    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Contact
@@ -110,7 +114,7 @@ class ContactSerializer(serializers.ModelSerializer):
             'WorkPhone',
             'Address',
             'Description',
-            'id'
+            'ContactID'
         ]
 
     def create(self, ahj, validated_data):
@@ -151,7 +155,7 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
+    EngineeringReviewRequirementID = serializers.IntegerField(source='id', required=False)
 
     class Meta:
         model = EngineeringReviewRequirement
@@ -160,7 +164,7 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
             'RequirementLevel',
             'StampType',
             'Description',
-            'id'
+            'EngineeringReviewRequirementID'
         ]
 
     def create(self, ahj, validated_data):
@@ -179,6 +183,7 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
 
 
 class AHJSerializer(serializers.ModelSerializer):
+    internal_id = serializers.IntegerField(source='id', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
@@ -202,7 +207,7 @@ class AHJSerializer(serializers.ModelSerializer):
             'Address',
             'Contacts',
             'EngineeringReviewRequirements',
-            'id'
+            'internal_id'
         ]
 
     def create(self, validated_data):

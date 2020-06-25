@@ -1,7 +1,4 @@
-from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view
-from django.http import JsonResponse
-
 from .serializers import *
 from rest_framework import generics
 from .permissions import *
@@ -58,15 +55,15 @@ def ahj_upload(request):
     return render(request, template, context)
 
 
-# @api_view(['GET'])
-# def get_ahj_history(request, pk):
-#     if request.auth is None:
-#         return Response(request.detail)
-#     try:
-#         ahj = AHJ.objects.get(pk=pk)
-#     except AHJ.DoesNotExist:
-#         return Response({'detail': 'AHJ does not exist'})
-#     return get_ahj_diff(ahj)
+@api_view(['GET'])
+def get_ahj_history(request, pk):
+    if request.auth is None:
+        return Response(request.detail)
+    try:
+        ahj = AHJ.objects.get(pk=pk)
+    except AHJ.DoesNotExist:
+        return Response({'detail': 'AHJ does not exist'})
+    return get_ahj_diff(ahj)
 
 
 class AHJList(generics.ListCreateAPIView):

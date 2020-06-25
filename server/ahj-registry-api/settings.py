@@ -29,6 +29,9 @@ DEBUG = True
 # Add allowed hosts that can connect to this API. Add the host IP of the web app connecting to this API.
 ALLOWED_HOSTS = []
 
+GEOS_LIBRARY_PATH = '/usr/local/lib/libgeos_c.so'
+
+GDAL_LIBRARY_PATH = '/usr/local/lib/libgdal.so'
 
 # Application definition
 
@@ -46,7 +49,9 @@ INSTALLED_APPS = [
     'rest_framework_filters',
     'core',
     'taggit',
-    'simple_history'
+    'simple_history',
+    'django.contrib.gis',
+    'ahj_gis'
 ]
 
 MEDIA_URL = '/media/'
@@ -78,6 +83,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 20
 }
@@ -106,7 +112,7 @@ WSGI_APPLICATION = 'ahj-registry-api.wsgi.application'
 DATABASES = {
     'default': {
         'NAME': '',
-        'ENGINE': '',
+        'ENGINE': 'django.contrib.gis.db.backends.mysql',
         'OPTIONS': {
             'sql_mode': 'STRICT_ALL_TABLES',
         },

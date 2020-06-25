@@ -47,10 +47,18 @@ RESIDENTIAL_CODE_CHOICES = [
     ('NoSolarRegulations', 'No Solar Regulations')
 ]
 
+WIND_CODE_CHOICES = [
+    ('ASCE716', 'ASCE7-16'),
+    ('ASCE716', 'ASCE7-16'),
+    ('ASCE716', 'ASCE7-16'),
+    ('SpecialWindZone', 'Special Wind Zone')
+]
+
 DOCUMENT_SUBMISSION_METHOD_CHOICES = [
     ('Epermitting', 'Epermitting'),
     ('Email', 'Email'),
-    ('InPerson', 'In Person')
+    ('InPerson', 'In Person'),
+    ('SolarApp', 'SolarAPP')
 ]
 
 ADDRESS_TYPE_CHOICES = [
@@ -72,7 +80,8 @@ LOCATION_DETERMINATION_METHOD_CHOICES = [
 LOCATION_TYPE_CHOICES = [
     ('DeviceSpecific', 'Device Specific'),
     ('SiteEntrance', 'Site Entrance'),
-    ('GeneralProximity', 'General Proximity')
+    ('GeneralProximity', 'General Proximity'),
+    ('Warehouse', 'Warehouse')
 ]
 
 CONTACT_TYPE_CHOICES = [
@@ -83,7 +92,17 @@ CONTACT_TYPE_CHOICES = [
     ('Originator', 'Originator'),
     ('Installer', 'Installer'),
     ('Investor', 'Investor'),
-    ('PermittingOfficial', 'Permitting Official')
+    ('PermittingOfficial', 'Permitting Official'),
+    ('FireMarshal', 'Fire Marshal'),
+    ('ProjectManager', 'Project Manager')
+]
+
+PREFERRED_CONTACT_METHOD_CHOICES = [
+    ('Email', 'Email'),
+    ('WorkPhone', 'Work Phone'),
+    ('CellPhone', 'Cell Phone'),
+    ('HomePhone', 'Home Phone'),
+    ('CellTextMessage', 'Cell Text Message'),
 ]
 
 ENGINEERING_REVIEW_TYPE_CHOICES = [
@@ -91,13 +110,14 @@ ENGINEERING_REVIEW_TYPE_CHOICES = [
     ('ElectricalEngineer', 'Electrical Engineer'),
     ('PVEngineer', 'PV Engineer'),
     ('MasterElectrician', 'Master Electrician'),
+    ('FireMarshal', 'Fire Marshal'),
     ('EnvironmentalEngineer', 'Environmental Engineer')
 ]
 
 REQUIREMENT_LEVEL_CHOICES = [
     ('Required', 'Required'),
     ('Optional', 'Optional'),
-    ('ConditionallyOptional', 'Conditionally Optional')
+    ('ConditionallyRequired', 'Conditionally Required')
 ]
 
 STAMP_TYPE_CHOICES = [
@@ -178,21 +198,25 @@ class AHJ(models.Model):
     AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     AHJName = models.CharField(blank=True, max_length=100)
     BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
-    BuildingCodeNotes = models.CharField(blank=True, max_length=225)
+    BuildingCodeNotes = models.CharField(blank=True, max_length=255)
     Description = models.TextField(blank=True)
     DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
-    DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=225)
+    DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
     ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
-    ElectricCodeNotes = models.CharField(blank=True, max_length=225)
+    ElectricCodeNotes = models.CharField(blank=True, max_length=255)
+    FireFolderURL = models.CharField(blank=True, max_length=255)
     FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
-    FireCodeNotes = models.CharField(blank=True, max_length=225)
+    FireCodeNotes = models.CharField(blank=True, max_length=255)
     ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)
-    ResidentialCodeNotes = models.CharField(blank=True, max_length=225)
+    ResidentialCodeNotes = models.CharField(blank=True, max_length=255)
+    WindCode = models.CharField(choices=WIND_CODE_CHOICES, blank=True, default='', max_length=45)
+    WindCodeNotes = models.CharField(blank=True, max_length=255)
     history = HistoricalRecords()
 
 
 class Contact(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    ContactTimezone = models.CharField(blank=True, max_length=100)
     ContactType = models.CharField(choices=CONTACT_TYPE_CHOICES, blank=True, default='', max_length=45)
     Description = models.TextField(blank=True)
     Email = models.CharField(blank=True, max_length=100)
@@ -201,6 +225,8 @@ class Contact(models.Model):
     LastName = models.CharField(blank=True, max_length=100)
     MiddleName = models.CharField(blank=True, max_length=100)
     MobilePhone = models.CharField(blank=True, max_length=31)
+    PreferredContactMethod = models.CharField(choices=PREFERRED_CONTACT_METHOD_CHOICES, blank=True, default='', max_length=45)
+    Title = models.CharField(blank=True, max_length=100)
     WorkPhone = models.CharField(blank=True, max_length=31)
     history = HistoricalRecords()
 
