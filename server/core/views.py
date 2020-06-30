@@ -76,6 +76,7 @@ class AHJList(generics.ListCreateAPIView):
 
 
 class AHJDetail(generics.RetrieveUpdateDestroyAPIView):
+    lookup_field = 'AHJID'
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)

@@ -4,15 +4,35 @@ from rest_framework.decorators import api_view
 from core.models import AHJ
 from core.serializers import AHJSerializer
 from rest_framework.response import Response
+from core.serializers import AddressSerializer, LocationSerializer
 import requests
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def find_ahj_coordinate(request):
     if request.auth is None:
         return Response(request.detail)
-    longitude = request.GET.get('Longitude', '')
-    latitude = request.GET.get('Latitude', '')
+
+    longitude = ''
+    latitude = ''
+
+    if request.data.get('Location') is None:
+        # The data is an Address
+        location_serializer = LocationSerializer(data=request.data)
+        if location_serializer.is_valid():
+            validated_data = location_serializer.validated_data
+            longitude = validated_data.get('Longitude', '')
+            latitude = validated_data.get('Latitude', '')
+    else:
+        # The data is a Location
+        address_serializer = AddressSerializer(data=request.data)
+        if address_serializer.is_valid():
+            validated_data = address_serializer.validated_data
+            if validated_data.get('location') is not None:
+                location = validated_data.pop('location')
+                longitude = location.get('Longitude', '')
+                latitude = location.get('Latitude', '')
+
     if longitude == '' or latitude == '':
         return Response({'detail': 'invalid coordinates'})
 
@@ -21,14 +41,14 @@ def find_ahj_coordinate(request):
     return Response(AHJSerializer(ahj_set, many=True).data)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def find_ahj_address(request):
     if request.auth is None:
         return Response(request.detail)
-    street = request.GET.get('street', '')
-    city = request.GET.get('city', '')
-    state = request.GET.get('state', '')
-    zip = request.GET.get('zip', '')
+    street = request.data.get('AddrLine1', '')
+    city = request.data.get('City', '')
+    state = request.data.get('State', '')
+    zip = request.data.get('Zip', '')
     census_url = 'https://geocoding.geo.census.gov/geocoder/locations/address'\
                  + '?street=' + street\
                  + '&city=' + city\

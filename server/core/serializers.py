@@ -2,8 +2,64 @@ from rest_framework import serializers
 from .models import *
 
 
+class OrangeButtonUUIDFieldSerializer(serializers.UUIDField):
+
+    def to_representation(self, value):
+        return {'Value': value}
+
+    def to_internal_value(self, data):
+        return data['Value']
+
+
+class OrangeButtonCharFieldSerializer(serializers.CharField):
+
+    def to_representation(self, value):
+        return {'Value': value}
+
+    def to_internal_value(self, data):
+        return data['Value']
+
+
+class OrangeButtonIntegerFieldSerializer(serializers.IntegerField):
+
+    def to_representation(self, value):
+        return {'Value': value}
+
+    def to_internal_value(self, data):
+        return data['Value']
+
+
+class OrangeButtonDecimalFieldSerializer(serializers.DecimalField):
+
+    def __init__(self, required, unit, decimal_or_precision, max_digits, decimal_places):
+        super().__init__(max_digits=max_digits, decimal_places=decimal_places)
+        self.required = required
+        self.unit = unit
+        self.decimal_or_precision = decimal_or_precision
+
+    def to_representation(self, value):
+        if self.decimal_or_precision == 'Decimal':
+            return {'Decimal': self.decimal_places, 'Unit': self.unit, 'Value': value}
+        elif self.decimal_or_precision == 'Precision':
+            return {'Unit': self.unit, 'Value': value, 'Precision': self.max_digits}
+
+    def to_internal_value(self, data):
+        return data['Value']
+
+
 class LocationSerializer(serializers.ModelSerializer):
-    LocationID = serializers.IntegerField(source='Address_id', required=False)
+    LocationID = OrangeButtonIntegerFieldSerializer(source='Address_id', required=False)
+    Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal',
+                                                  max_digits=15, decimal_places=6)
+    Description = OrangeButtonCharFieldSerializer(required=False)
+    Elevation = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal',
+                                                   max_digits=15, decimal_places=6)
+    Latitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision',
+                                                  max_digits=8, decimal_places=6)
+    LocationDeterminationMethod = OrangeButtonCharFieldSerializer(required=False)
+    LocationType = OrangeButtonCharFieldSerializer(required=False)
+    Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision',
+                                                   max_digits=9, decimal_places=6)
 
     class Meta:
         model = Location
@@ -20,6 +76,9 @@ class LocationSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, address, validated_data):
+        if validated_data.get('Address_id') is not None:
+            validated_data.pop('Address_id')
+
         return Location.objects.create(Address=address, **validated_data)
 
     def update(self, instance, validated_data):
@@ -27,7 +86,8 @@ class LocationSerializer(serializers.ModelSerializer):
         instance.Description = validated_data.get('Description', instance.Description)
         instance.Elevation = validated_data.get('Elevation', instance.Elevation)
         instance.Latitude = validated_data.get('Latitude', instance.Latitude)
-        instance.LocationDeterminationMethod = validated_data.get('LocationDeterminationMethod', instance.LocationDeterminationMethod)
+        instance.LocationDeterminationMethod = validated_data.get('LocationDeterminationMethod',
+                                                                  instance.LocationDeterminationMethod)
         instance.LocationType = validated_data.get('LocationType', instance.LocationType)
         instance.Longitude = validated_data.get('Longitude', instance.Longitude)
         instance.save()
@@ -35,7 +95,17 @@ class LocationSerializer(serializers.ModelSerializer):
 
 
 class AddressSerializer(serializers.ModelSerializer):
-    AddressID = serializers.IntegerField(source='id', required=False)
+    AddressID = OrangeButtonCharFieldSerializer(source='id', required=False)
+    AddrLine1 = OrangeButtonCharFieldSerializer(required=False)
+    AddrLine2 = OrangeButtonCharFieldSerializer(required=False)
+    AddrLine3 = OrangeButtonCharFieldSerializer(required=False)
+    AddressType = OrangeButtonCharFieldSerializer(required=False)
+    City = OrangeButtonCharFieldSerializer(required=False)
+    Country = OrangeButtonCharFieldSerializer(required=False)
+    County = OrangeButtonCharFieldSerializer(required=False)
+    Description = OrangeButtonCharFieldSerializer(required=False)
+    StateProvince = OrangeButtonCharFieldSerializer(required=False)
+    ZipPostalCode = OrangeButtonCharFieldSerializer(required=False)
     Location = LocationSerializer(source='location', many=False, required=False, allow_null=True)
 
     class Meta:
@@ -52,11 +122,15 @@ class AddressSerializer(serializers.ModelSerializer):
             'StateProvince',
             'ZipPostalCode',
             'Location',
-            'Description',
             'AddressID'
         ]
 
     def create(self, model_object, model_object_type, validated_data):
+
+        # Do not specify an id for a new address
+        if validated_data.get('id') is not None:
+            validated_data.pop('id')
+
         # Pop off location object if it exists (done before creating address)
         location_data = None
         if validated_data.get('location') is not None:
@@ -97,7 +171,16 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class ContactSerializer(serializers.ModelSerializer):
-    ContactID = serializers.IntegerField(source='id', required=False)
+    ContactID = OrangeButtonIntegerFieldSerializer(source='id', required=False)
+    ContactType = OrangeButtonCharFieldSerializer(required=False)
+    Description = OrangeButtonCharFieldSerializer(required=False)
+    Email = OrangeButtonCharFieldSerializer(required=False)
+    FirstName = OrangeButtonCharFieldSerializer(required=False)
+    HomePhone = OrangeButtonCharFieldSerializer(required=False)
+    LastName = OrangeButtonCharFieldSerializer(required=False)
+    MiddleName = OrangeButtonCharFieldSerializer(required=False)
+    MobilePhone = OrangeButtonCharFieldSerializer(required=False)
+    WorkPhone = OrangeButtonCharFieldSerializer(required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
 
     class Meta:
@@ -155,7 +238,11 @@ class ContactSerializer(serializers.ModelSerializer):
 
 
 class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
-    EngineeringReviewRequirementID = serializers.IntegerField(source='id', required=False)
+    EngineeringReviewRequirementID = OrangeButtonIntegerFieldSerializer(source='id', required=False)
+    RequirementLevel = OrangeButtonCharFieldSerializer(required=False)
+    StampType = OrangeButtonCharFieldSerializer(required=False)
+    Description = OrangeButtonCharFieldSerializer(required=False)
+    EngineeringReviewType = OrangeButtonCharFieldSerializer(required=False)
 
     class Meta:
         model = EngineeringReviewRequirement
@@ -183,10 +270,26 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
 
 
 class AHJSerializer(serializers.ModelSerializer):
-    internal_id = serializers.IntegerField(source='id', required=False)
+    internal_id = OrangeButtonIntegerFieldSerializer(source='id', required=False)
+    AHJID = OrangeButtonCharFieldSerializer(required=False)
+    AHJName = OrangeButtonCharFieldSerializer(required=False)
+    BuildingCode = OrangeButtonCharFieldSerializer(required=False)
+    BuildingCodeNotes = OrangeButtonCharFieldSerializer(required=False)
+    Description = OrangeButtonCharFieldSerializer(required=False)
+    DocumentSubmissionMethod = OrangeButtonCharFieldSerializer(required=False)
+    DocumentSubmissionMethodNotes = OrangeButtonCharFieldSerializer(required=False)
+    ElectricCode = OrangeButtonCharFieldSerializer(required=False)
+    ElectricCodeNotes = OrangeButtonCharFieldSerializer(required=False)
+    FireCode = OrangeButtonCharFieldSerializer(required=False)
+    FireCodeNotes = OrangeButtonCharFieldSerializer(required=False)
+    ResidentialCode = OrangeButtonCharFieldSerializer(required=False)
+    ResidentialCodeNotes = OrangeButtonCharFieldSerializer(required=False)
+    WindCode = OrangeButtonCharFieldSerializer(required=False)
+    WindCodeNotes = OrangeButtonCharFieldSerializer(required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
-    EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
+    EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set',
+                                                                           many=True, required=False)
 
     class Meta:
         model = AHJ
@@ -204,6 +307,8 @@ class AHJSerializer(serializers.ModelSerializer):
             'FireCodeNotes',
             'ResidentialCode',
             'ResidentialCodeNotes',
+            'WindCode',
+            'WindCodeNotes',
             'Address',
             'Contacts',
             'EngineeringReviewRequirements',
@@ -214,6 +319,10 @@ class AHJSerializer(serializers.ModelSerializer):
         address_data = None
         contacts_data = None
         engineering_review_requirements_data = None
+        if validated_data.get('AHJID') is not None:
+            validated_data.pop('AHJID')
+        if validated_data.get('id') is not None:
+            print(validated_data.pop('id'))
         if validated_data.get('address') is not None:
             address_data = validated_data.pop('address')
         if validated_data.get('contact_set') is not None:
@@ -244,8 +353,10 @@ class AHJSerializer(serializers.ModelSerializer):
         instance.BuildingCode = validated_data.get('BuildingCode', instance.BuildingCode)
         instance.BuildingCodeNotes = validated_data.get('BuildingCodeNotes', instance.BuildingCodeNotes)
         instance.Description = validated_data.get('Description', instance.Description)
-        instance.DocumentSubmissionMethod = validated_data.get('DocumentSubmissionMethod', instance.DocumentSubmissionMethod)
-        instance.DocumentSubmissionMethodNotes = validated_data.get('DocumentSubmissionMethodNotes', instance.DocumentSubmissionMethodNotes)
+        instance.DocumentSubmissionMethod = validated_data.get('DocumentSubmissionMethod',
+                                                               instance.DocumentSubmissionMethod)
+        instance.DocumentSubmissionMethodNotes = validated_data.get('DocumentSubmissionMethodNotes',
+                                                                    instance.DocumentSubmissionMethodNotes)
         instance.ElectricCode = validated_data.get('ElectricCode', instance.ElectricCode)
         instance.ElectricCodeNotes = validated_data.get('ElectricCodeNotes', instance.ElectricCodeNotes)
         instance.FireCode = validated_data.get('FireCode', instance.FireCode)
@@ -300,10 +411,12 @@ class AHJSerializer(serializers.ModelSerializer):
                     if eng_rev_req is None:
                         # The existing engRevReq is not associated with this AHJ, so make a new one
                         engineering_review_requirements_data[i].pop('id')
-                        engineering_review_requirement_serializer.create(instance, engineering_review_requirements_data[i])
+                        engineering_review_requirement_serializer.create(instance,
+                                                                         engineering_review_requirements_data[i])
                     else:
                         # The existing engRevReq is associated with this AHJ, so update it
-                        engineering_review_requirement_serializer.update(eng_rev_req, engineering_review_requirements_data[i])
+                        engineering_review_requirement_serializer.update(eng_rev_req,
+                                                                         engineering_review_requirements_data[i])
                 else:
                     # There exists no engRevReq with the submitted id, so make a new one
                     engineering_review_requirement_serializer.create(instance, engineering_review_requirements_data[i])

@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path('ahj/', views.AHJList.as_view(), name="ahj"),
     path('geo/', include('ahj_gis.urls')),
-    path('ahj/<str:pk>/', views.AHJDetail.as_view(), name="ahj"),
+    path('ahj/<uuid:AHJID>/', views.AHJDetail.as_view(), name="ahj"),
     path('contact/<str:pk>/', views.ContactDetail.as_view(), name="ahj"),
     path('eng-rev-req/<str:pk>/', views.EngineeringReviewRequirementDetail.as_view(), name="ahj"),
     path('history/ahj/', views.AHJHistory.as_view(), name="history"),
