@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.renderers import JSONRenderer
 from .models import *
 
 
@@ -49,17 +50,13 @@ class OrangeButtonDecimalFieldSerializer(serializers.DecimalField):
 
 class LocationSerializer(serializers.ModelSerializer):
     LocationID = OrangeButtonIntegerFieldSerializer(source='Address_id', required=False)
-    Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal',
-                                                  max_digits=15, decimal_places=6)
+    Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
     Description = OrangeButtonCharFieldSerializer(required=False)
-    Elevation = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal',
-                                                   max_digits=15, decimal_places=6)
-    Latitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision',
-                                                  max_digits=8, decimal_places=6)
+    Elevation = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
+    Latitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=8, decimal_places=6)
     LocationDeterminationMethod = OrangeButtonCharFieldSerializer(required=False)
     LocationType = OrangeButtonCharFieldSerializer(required=False)
-    Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision',
-                                                   max_digits=9, decimal_places=6)
+    Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=9, decimal_places=6)
 
     class Meta:
         model = Location
@@ -86,8 +83,7 @@ class LocationSerializer(serializers.ModelSerializer):
         instance.Description = validated_data.get('Description', instance.Description)
         instance.Elevation = validated_data.get('Elevation', instance.Elevation)
         instance.Latitude = validated_data.get('Latitude', instance.Latitude)
-        instance.LocationDeterminationMethod = validated_data.get('LocationDeterminationMethod',
-                                                                  instance.LocationDeterminationMethod)
+        instance.LocationDeterminationMethod = validated_data.get('LocationDeterminationMethod', instance.LocationDeterminationMethod)
         instance.LocationType = validated_data.get('LocationType', instance.LocationType)
         instance.Longitude = validated_data.get('Longitude', instance.Longitude)
         instance.save()
@@ -270,7 +266,6 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
 
 
 class AHJSerializer(serializers.ModelSerializer):
-    internal_id = OrangeButtonIntegerFieldSerializer(source='id', required=False)
     AHJID = OrangeButtonCharFieldSerializer(required=False)
     AHJName = OrangeButtonCharFieldSerializer(required=False)
     BuildingCode = OrangeButtonCharFieldSerializer(required=False)
@@ -288,8 +283,7 @@ class AHJSerializer(serializers.ModelSerializer):
     WindCodeNotes = OrangeButtonCharFieldSerializer(required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
-    EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set',
-                                                                           many=True, required=False)
+    EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
 
     class Meta:
         model = AHJ
@@ -312,7 +306,6 @@ class AHJSerializer(serializers.ModelSerializer):
             'Address',
             'Contacts',
             'EngineeringReviewRequirements',
-            'internal_id'
         ]
 
     def create(self, validated_data):
@@ -321,8 +314,6 @@ class AHJSerializer(serializers.ModelSerializer):
         engineering_review_requirements_data = None
         if validated_data.get('AHJID') is not None:
             validated_data.pop('AHJID')
-        if validated_data.get('id') is not None:
-            print(validated_data.pop('id'))
         if validated_data.get('address') is not None:
             address_data = validated_data.pop('address')
         if validated_data.get('contact_set') is not None:
@@ -348,15 +339,16 @@ class AHJSerializer(serializers.ModelSerializer):
         return ahj
 
     def update(self, instance, validated_data):
-        # updates with same values are still recorded
+        # Do not update if nothing was changed. self.data is current, self.initial_data is update
+        if JSONRenderer().render(self.data) == JSONRenderer().render(self.initial_data):
+            return instance
+
         instance.AHJName = validated_data.get('AHJName', instance.AHJName)
         instance.BuildingCode = validated_data.get('BuildingCode', instance.BuildingCode)
         instance.BuildingCodeNotes = validated_data.get('BuildingCodeNotes', instance.BuildingCodeNotes)
         instance.Description = validated_data.get('Description', instance.Description)
-        instance.DocumentSubmissionMethod = validated_data.get('DocumentSubmissionMethod',
-                                                               instance.DocumentSubmissionMethod)
-        instance.DocumentSubmissionMethodNotes = validated_data.get('DocumentSubmissionMethodNotes',
-                                                                    instance.DocumentSubmissionMethodNotes)
+        instance.DocumentSubmissionMethod = validated_data.get('DocumentSubmissionMethod', instance.DocumentSubmissionMethod)
+        instance.DocumentSubmissionMethodNotes = validated_data.get('DocumentSubmissionMethodNotes', instance.DocumentSubmissionMethodNotes)
         instance.ElectricCode = validated_data.get('ElectricCode', instance.ElectricCode)
         instance.ElectricCodeNotes = validated_data.get('ElectricCodeNotes', instance.ElectricCodeNotes)
         instance.FireCode = validated_data.get('FireCode', instance.FireCode)
@@ -388,7 +380,6 @@ class AHJSerializer(serializers.ModelSerializer):
                     contact = ahj_contacts.filter(pk=contact_id).first()
                     if contact is None:
                         # The existing contact is not associated with this AHJ, so make a new one
-                        contacts_data[i].pop('id')
                         contact_serializer.create(instance, contacts_data[i])
                     else:
                         # The existing contact is associated with this AHJ, so update it
@@ -410,13 +401,10 @@ class AHJSerializer(serializers.ModelSerializer):
                     eng_rev_req = ahj_eng_rev_req.filter(pk=eng_rev_req_id).first()
                     if eng_rev_req is None:
                         # The existing engRevReq is not associated with this AHJ, so make a new one
-                        engineering_review_requirements_data[i].pop('id')
-                        engineering_review_requirement_serializer.create(instance,
-                                                                         engineering_review_requirements_data[i])
+                        engineering_review_requirement_serializer.create(instance, engineering_review_requirements_data[i])
                     else:
                         # The existing engRevReq is associated with this AHJ, so update it
-                        engineering_review_requirement_serializer.update(eng_rev_req,
-                                                                         engineering_review_requirements_data[i])
+                        engineering_review_requirement_serializer.update(eng_rev_req, engineering_review_requirements_data[i])
                 else:
                     # There exists no engRevReq with the submitted id, so make a new one
                     engineering_review_requirement_serializer.create(instance, engineering_review_requirements_data[i])
