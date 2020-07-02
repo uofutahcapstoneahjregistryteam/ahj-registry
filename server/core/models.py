@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ValidationError
+from ahj_gis.models import County, City
 
 from taggit.managers import TaggableManager
 from simple_history.models import HistoricalRecords
@@ -195,6 +196,8 @@ class User(AbstractBaseUser):
 
 
 class AHJ(models.Model):
+    county_mpoly = models.ForeignKey(County, null=True, on_delete=models.DO_NOTHING)
+    city_mpoly = models.ForeignKey(City, null=True, on_delete=models.DO_NOTHING)
     AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     AHJName = models.CharField(blank=True, max_length=100)
     BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
@@ -204,7 +207,7 @@ class AHJ(models.Model):
     DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
     ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
     ElectricCodeNotes = models.CharField(blank=True, max_length=255)
-    FireFolderURL = models.CharField(blank=True, max_length=255)
+    FileFolderURL = models.CharField(blank=True, max_length=255)
     FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
     FireCodeNotes = models.CharField(blank=True, max_length=255)
     ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)

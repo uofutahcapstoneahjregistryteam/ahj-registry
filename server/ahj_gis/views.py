@@ -2,10 +2,40 @@ from rest_framework.utils import json
 from .utils import get_ahj_set
 from rest_framework.decorators import api_view
 from core.models import AHJ
+from .models import County, City
 from core.serializers import AHJSerializer
 from rest_framework.response import Response
 from core.serializers import AddressSerializer, LocationSerializer
 import requests
+
+import csv
+from django.http import HttpResponse
+
+
+def county_csv(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="counties.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['state_fp', 'county_name'])
+    for county in County.objects.all():
+        writer.writerow([county.STATEFP, county.NAMELSAD])
+
+    return response
+
+
+def city_csv(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="cities.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['state_fp', 'city_name'])
+    for city in City.objects.all():
+        writer.writerow([city.STATEFP, city.NAMELSAD])
+
+    return response
 
 
 @api_view(['POST'])

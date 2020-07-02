@@ -20,7 +20,7 @@ def ahj_upload(request):
     data = AHJ.objects.all()
     # prompt is a context variable that can have different values      depending on their context
     prompt = {
-        'order': 'Order of the CSV should be name, email, address,    phone, profile',
+        'order': 'Order of the CSV should be state_abbr, (city|county)_name',
         'profiles': data
               }
     # GET request returns the value of the data with the specified key.
@@ -35,22 +35,14 @@ def ahj_upload(request):
     io_string = io.StringIO(data_set)
     next(io_string)
     in_city = True
+    i = 1
     for column in csv.reader(io_string, delimiter=',', quotechar="|"):
-        if column[0] == 'County':
-            in_city = False
-            continue
-        if in_city:
-            Address.objects.create(
-                AHJ=AHJ.objects.create(),
-                StateProvince=column[0],
-                City=column[1]
-            )
-        else:
-            Address.objects.create(
-                AHJ=AHJ.objects.create(),
-                StateProvince=column[0],
-                County=column[1]
-            )
+        Address.objects.create(
+            AHJ=AHJ.objects.create(AHJName=column[1]),
+            StateProvince=column[0]
+        )
+        print(i)
+        i += 1
     context = {}
     return render(request, template, context)
 
@@ -95,6 +87,7 @@ class EngineeringReviewRequirementDetail(generics.DestroyAPIView):
 
 
 class AHJHistory(generics.ListCreateAPIView):
+    lookup_field = 'AHJID'
     queryset = AHJ.history.all()
     serializer_class = AHJHistorySerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
