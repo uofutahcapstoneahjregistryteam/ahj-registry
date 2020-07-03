@@ -25,7 +25,7 @@ class County(models.Model):
     mpoly = models.MultiPolygonField()
 
     def __str__(self):
-        return self.NAMELSAD
+        return self.NAMELSAD + ', ' + self.STATEABBR
 
 
 # Census place shapefile model
@@ -51,4 +51,4 @@ class City(models.Model):
     mpoly = models.MultiPolygonField()
 
     def __str__(self):
-        return self.NAMELSAD
+        return self.NAMELSAD + ', ' + self.STATEABBR

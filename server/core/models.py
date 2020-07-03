@@ -216,6 +216,9 @@ class AHJ(models.Model):
     WindCodeNotes = models.CharField(blank=True, max_length=255)
     history = HistoricalRecords()
 
+    def __str__(self):
+        return self.AHJName + ', ' + Address.objects.get(AHJ=self).StateProvince
+
 
 class Contact(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
