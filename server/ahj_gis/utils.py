@@ -8,31 +8,27 @@ def get_ahj_set(longitude, latitude):
     coordinate = Point(float(longitude), float(latitude))
 
     # Filter by intersects
-    city_set = City.objects.filter(mpoly__intersects=coordinate)
-    county_set = County.objects.filter(mpoly__intersects=coordinate)
+    first_city_set = City.objects.filter(mpoly__intersects=coordinate)
+    first_county_set = County.objects.filter(mpoly__intersects=coordinate)
 
-    city_names = []
-    county_names = []
-
+    second_city_set = []
+    second_county_set = []
     # Filter intersects results by covers
-    for city in city_set:
+    for city in first_city_set:
         # # Use covers to include coordinates on borders
         if city.mpoly.covers(coordinate):
-            city_names.append(city.NAME)
-    for county in county_set:
+            second_city_set.append(city)
+    for county in first_county_set:
         # Use covers to include coordinates on borders
         if county.mpoly.covers(coordinate):
-            county_names.append(county.NAME)
-
-    print(city_names)
-    print(county_names)
+            second_county_set.append(county)
 
     # Combine all of the AHJ's with the found names into one QuerySet
-    ahj_set = AHJ.objects.none()
-    for name in city_names:
-        ahj_set |= AHJ.objects.filter(address__City__icontains=name)
-    for name in county_names:
-        ahj_set |= AHJ.objects.filter(address__County__icontains=name)
+    ahj_set = []
+    for city in second_city_set:
+        ahj_set.append(AHJ.objects.get(city_mpoly=city))
+    for county in second_county_set:
+        ahj_set.append(AHJ.objects.get(county_mpoly=county))
 
     return ahj_set
 
