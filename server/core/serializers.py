@@ -305,7 +305,7 @@ class AHJSerializer(serializers.ModelSerializer):
             'WindCodeNotes',
             'Address',
             'Contacts',
-            'EngineeringReviewRequirements',
+            'EngineeringReviewRequirements'
         ]
 
     def create(self, validated_data):
