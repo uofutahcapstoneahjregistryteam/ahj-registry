@@ -81,3 +81,27 @@ def export_polygons_no_ahj_csv():
             writer.writerow([c.NAMELSAD, c.STATEABBR, c.STATEFP])
             print('Written City %i' % count)
             count += 1
+
+
+def export_county_polygon_geoid_csv():
+    with open('county_polygon_geoid.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['NAMELSAD', 'STATEABBR', 'GEOID'])
+        counties = County.objects.all()
+        count = 1
+        for c in counties:
+            writer.writerow([c.NAMELSAD, c.STATEABBR, c.GEOID])
+            print('Written County %i' % count)
+            count += 1
+
+
+def export_city_polygon_geoid_csv():
+    with open('city_polygon_geoid.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['NAMELSAD', 'STATEABBR', 'GEOID'])
+        cities = City.objects.all()
+        count = 1
+        for c in cities:
+            writer.writerow([c.NAMELSAD, c.STATEABBR, c.GEOID])
+            print('Written City %i' % count)
+            count += 1

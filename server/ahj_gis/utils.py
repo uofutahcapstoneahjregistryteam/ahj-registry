@@ -8,33 +8,22 @@ def get_ahj_set(longitude, latitude):
     coordinate = Point(float(longitude), float(latitude))
 
     # Filter by intersects
-    intersects_city_set = City.objects.filter(mpoly__intersects=coordinate)
-    intersects_county_set = County.objects.filter(mpoly__intersects=coordinate)
+    intersects_poly_set = Polygon.objects.filter(mpoly__intersects=coordinate)
 
-    covers_city_set = []
-    covers_county_set = []
+    covers_poly_set = []
     # Filter intersects results by covers
-    for city in intersects_city_set:
-        # # Use covers to include coordinates on borders
-        if city.mpoly.covers(coordinate):
-            covers_city_set.append(city)
-    for county in intersects_county_set:
+    for poly in intersects_poly_set:
         # Use covers to include coordinates on borders
-        if county.mpoly.covers(coordinate):
-            covers_county_set.append(county)
+        if poly.mpoly.covers(coordinate):
+            covers_poly_set.append(poly)
 
     # Combine all of the AHJ's with the found names into one QuerySet
     ahj_set = []
-    for city in covers_city_set:
+    for poly in covers_poly_set:
         # Use filter and first to not throw error when an AHJ for the found polygon does not exist
-        city_ahj = AHJ.objects.filter(city_mpoly=city).first()
-        if city_ahj is not None:
-            ahj_set.append(city_ahj)
-    for county in covers_county_set:
-        # Use filter and first to not throw error when an AHJ for the found polygon does not exist
-        county_ahj = AHJ.objects.filter(county_mpoly=county).first()
-        if county_ahj is not None:
-            ahj_set.append(county_ahj)
+        poly_ahj = AHJ.objects.filter(mpoly=poly).first()
+        if poly_ahj is not None:
+            ahj_set.append(poly_ahj)
     return ahj_set
 
 
@@ -191,9 +180,8 @@ def add_state_abbr():
 
 def add_polygons():
     # Sort AHJs to at least make cure they are grouped by state.
-    ahjs = AHJ.objects.filter(county_mpoly=None).filter(city_mpoly=None).order_by('address__StateProvince')
-    counties = County.objects.all()
-    cities = City.objects.all()
+    ahjs = AHJ.objects.order_by('address__StateProvince')
+    polygons = Polygon.objects.all()
 
     i = 1
     # Counter for how many times we refiltered by state
@@ -201,21 +189,17 @@ def add_polygons():
 
     with open('potential_duplicates.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['AHJID', 'AHJName', 'StateProvince', 'AddedToBoth'])
+        writer.writerow(['AHJID', 'AHJName', 'StateProvince'])
 
         # Track what state we should filter for
         current_state_abbr = Address.objects.get(AHJ=ahjs.first()).StateProvince
 
         # Hold the counties and places of the current state
-        temp_counties = counties.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
-        temp_cities = cities.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
+        temp_polygons = polygons.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
 
         # For each ahj, give it a place and/or county
         # Record the ahjs that are potential duplicates
         for ahj in ahjs:
-
-            # Counter to check if both place and county were assigned to an ahj
-            added_to_both = 0
 
             # Get the ahj's address to filter by state
             address = Address.objects.get(AHJ=ahj)
@@ -224,45 +208,27 @@ def add_polygons():
             temp_state_abbr = address.StateProvince
             if current_state_abbr != temp_state_abbr:
                 current_state_abbr = temp_state_abbr
-                temp_counties = counties.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
-                temp_cities = cities.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
+                temp_polygons = polygons.filter(STATEABBR=current_state_abbr).order_by('NAMELSAD')
                 print('Refilter by state %i for %s' % (state_refilter_count, current_state_abbr))
                 state_refilter_count += 1
 
-            county = None
-            city = None
-            county_index = binary_search(temp_counties, ahj.AHJName)
-            city_index = binary_search(temp_cities, ahj.AHJName)
+            polygon = None
+            polygon_index = binary_search(temp_polygons, ahj.AHJName)
 
-            if county_index != -1:
-                county = temp_counties[county_index]
-            if city_index != -1:
-                city = temp_cities[city_index]
+            if polygon_index != -1:
+                polygon = temp_polygons[polygon_index]
 
-            if county is not None:
-                if ahj.county_mpoly is not None:
+            if polygon is not None:
+                if ahj.mpoly is not None:
                     # Write potential duplicates
                     writer.writerow([ahj.AHJID, ahj.AHJName, address.StateProvince])
                 else:
-                    ahj.county_mpoly = county
+                    ahj.mpoly = polygon
                     ahj.save()
-                    print('Set county ' + county.NAMELSAD + ', ' + county.STATEABBR + ' as the polygon for ' + ahj.AHJName)
-                    added_to_both += 1
+                    print('Set polygon ' + polygon.NAMELSAD + ', ' + polygon.STATEABBR + ' as the polygon for ' + ahj.AHJName)
+                    i += 1
 
-            if city is not None:
-                if ahj.city_mpoly is not None:
-                    # Write potential duplicates
-                    writer.writerow([ahj.AHJID, ahj.AHJName, address.StateProvince])
-                else:
-                    ahj.city_mpoly = city
-                    ahj.save()
-                    print('Set city ' + city.NAMELSAD + ', ' + city.STATEABBR + ' as the polygon for ' + ahj.AHJName)
-                    added_to_both += 1
-
-            print('AHJ %i done' % i)
-            i += 1
-            if added_to_both == 2:
-                writer.writerow([ahj.AHJID, ahj.AHJName, address.StateProvince, 'True'])
+            print('Count: %i' % i)
 
 
 def clear_ahj_polygon_assignment():
@@ -274,6 +240,26 @@ def clear_ahj_polygon_assignment():
         ahj.save()
         print('Cleared mpoly of ' + ahj.AHJName)
         print('AHJ %i done' % i)
+        i += 1
+
+
+def merge_county_city():
+    i = 1
+    counties = County.objects.all()
+    cities = City.objects.all()
+    for c in counties:
+        Polygon.objects.create(STATEFP=c.STATEFP, STATEABBR=c.STATEABBR, POLYFP=c.COUNTYFP, POLYNS=c.COUNTYNS,
+                               GEOID=c.GEOID, NAME=c.NAME, NAMELSAD=c.NAMELSAD, LSAD=c.LSAD, CLASSFP=c.CLASSFP,
+                               MTFCC=c.MTFCC, FUNCSTAT=c.FUNCSTAT, ALAND=c.ALAND, AWATER=c.AWATER, INTPTLAT=c.INTPTLAT,
+                               INTPTLON=c.INTPTLON, mpoly=c.mpoly, CSAFP=c.CSAFP, CBSAFP=c.CBSAFP, METDIVFP=c.METDIVFP)
+        print('%i Created Polygon for County: %s' % (i, c.NAMELSAD))
+        i += 1
+    for c in cities:
+        Polygon.objects.create(STATEFP=c.STATEFP, STATEABBR=c.STATEABBR, POLYFP=c.PLACEFP, POLYNS=c.PLACENS,
+                               GEOID=c.GEOID, NAME=c.NAME, NAMELSAD=c.NAMELSAD, LSAD=c.LSAD, CLASSFP=c.CLASSFP,
+                               MTFCC=c.MTFCC, FUNCSTAT=c.FUNCSTAT, ALAND=c.ALAND, AWATER=c.AWATER, INTPTLAT=c.INTPTLAT,
+                               INTPTLON=c.INTPTLON, mpoly=c.mpoly, PCICBSA=c.PCICBSA, PCINECTA=c.PCINECTA)
+        print('%i Created Polygon for City: %s' % (i, c.NAMELSAD))
         i += 1
 
 

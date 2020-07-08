@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ValidationError
-from ahj_gis.models import County, City
+from ahj_gis.models import Polygon
 
 from taggit.managers import TaggableManager
 from simple_history.models import HistoricalRecords
@@ -196,8 +196,7 @@ class User(AbstractBaseUser):
 
 
 class AHJ(models.Model):
-    county_mpoly = models.ForeignKey(County, null=True, on_delete=models.DO_NOTHING)
-    city_mpoly = models.ForeignKey(City, null=True, on_delete=models.DO_NOTHING)
+    mpoly = models.ForeignKey(Polygon, null=True, on_delete=models.DO_NOTHING)
     AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     AHJName = models.CharField(blank=True, max_length=100)
     BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
