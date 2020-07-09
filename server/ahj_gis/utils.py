@@ -27,6 +27,83 @@ def get_ahj_set(longitude, latitude):
     return ahj_set
 
 
+def add_abbr_to_state():
+    states = State.objects.all()
+    for poly in states:
+        if poly.STATEFP == '01': poly.STATEABBR = 'AL'
+        elif poly.STATEFP == '02': poly.STATEABBR = 'AK'
+        elif poly.STATEFP == '60': poly.STATEABBR = 'AS'
+        elif poly.STATEFP == '04': poly.STATEABBR = 'AZ'
+        elif poly.STATEFP == '05': poly.STATEABBR = 'AR'
+        elif poly.STATEFP == '81': poly.STATEABBR = 'BI'
+        elif poly.STATEFP == '06': poly.STATEABBR = 'CA'
+        elif poly.STATEFP == '08': poly.STATEABBR = 'CO'
+        elif poly.STATEFP == '09': poly.STATEABBR = 'CT'
+        elif poly.STATEFP == '10': poly.STATEABBR = 'DE'
+        elif poly.STATEFP == '11': poly.STATEABBR = 'DC'
+        elif poly.STATEFP == '12': poly.STATEABBR = 'FL'
+        elif poly.STATEFP == '64': poly.STATEABBR = 'FM'
+        elif poly.STATEFP == '13': poly.STATEABBR = 'GA'
+        elif poly.STATEFP == '66': poly.STATEABBR = 'GU'
+        elif poly.STATEFP == '15': poly.STATEABBR = 'HI'
+        elif poly.STATEFP == '84': poly.STATEABBR = '84'
+        elif poly.STATEFP == '16': poly.STATEABBR = 'ID'
+        elif poly.STATEFP == '17': poly.STATEABBR = 'IL'
+        elif poly.STATEFP == '18': poly.STATEABBR = 'IN'
+        elif poly.STATEFP == '19': poly.STATEABBR = 'IA'
+        elif poly.STATEFP == '86': poly.STATEABBR = 'JI'
+        elif poly.STATEFP == '67': poly.STATEABBR = 'JA'
+        elif poly.STATEFP == '20': poly.STATEABBR = 'KS'
+        elif poly.STATEFP == '21': poly.STATEABBR = 'KY'
+        elif poly.STATEFP == '89': poly.STATEABBR = 'KR'
+        elif poly.STATEFP == '22': poly.STATEABBR = 'LA'
+        elif poly.STATEFP == '23': poly.STATEABBR = 'ME'
+        elif poly.STATEFP == '68': poly.STATEABBR = 'MH'
+        elif poly.STATEFP == '24': poly.STATEABBR = 'MD'
+        elif poly.STATEFP == '25': poly.STATEABBR = 'MA'
+        elif poly.STATEFP == '26': poly.STATEABBR = 'MI'
+        elif poly.STATEFP == '71': poly.STATEABBR = '71'
+        elif poly.STATEFP == '27': poly.STATEABBR = 'MN'
+        elif poly.STATEFP == '28': poly.STATEABBR = 'MS'
+        elif poly.STATEFP == '29': poly.STATEABBR = 'MO'
+        elif poly.STATEFP == '30': poly.STATEABBR = 'MT'
+        elif poly.STATEFP == '76': poly.STATEABBR = '76'
+        elif poly.STATEFP == '31': poly.STATEABBR = 'NE'
+        elif poly.STATEFP == '32': poly.STATEABBR = 'NV'
+        elif poly.STATEFP == '33': poly.STATEABBR = 'NH'
+        elif poly.STATEFP == '34': poly.STATEABBR = 'NJ'
+        elif poly.STATEFP == '35': poly.STATEABBR = 'NM'
+        elif poly.STATEFP == '36': poly.STATEABBR = 'NY'
+        elif poly.STATEFP == '37': poly.STATEABBR = 'NC'
+        elif poly.STATEFP == '38': poly.STATEABBR = 'ND'
+        elif poly.STATEFP == '69': poly.STATEABBR = 'MP'
+        elif poly.STATEFP == '39': poly.STATEABBR = 'OH'
+        elif poly.STATEFP == '40': poly.STATEABBR = 'OK'
+        elif poly.STATEFP == '41': poly.STATEABBR = 'OR'
+        elif poly.STATEFP == '70': poly.STATEABBR = 'PW'
+        elif poly.STATEFP == '95': poly.STATEABBR = '95'
+        elif poly.STATEFP == '42': poly.STATEABBR = 'PA'
+        elif poly.STATEFP == '72': poly.STATEABBR = 'PR'
+        elif poly.STATEFP == '44': poly.STATEABBR = 'RI'
+        elif poly.STATEFP == '45': poly.STATEABBR = 'SC'
+        elif poly.STATEFP == '46': poly.STATEABBR = 'SD'
+        elif poly.STATEFP == '47': poly.STATEABBR = 'TN'
+        elif poly.STATEFP == '48': poly.STATEABBR = 'TX'
+        elif poly.STATEFP == '74': poly.STATEABBR = 'UM'
+        elif poly.STATEFP == '49': poly.STATEABBR = 'UT'
+        elif poly.STATEFP == '50': poly.STATEABBR = 'VT'
+        elif poly.STATEFP == '51': poly.STATEABBR = 'VA'
+        elif poly.STATEFP == '78': poly.STATEABBR = 'VI'
+        elif poly.STATEFP == '79': poly.STATEABBR = '79'
+        elif poly.STATEFP == '53': poly.STATEABBR = 'WA'
+        elif poly.STATEFP == '54': poly.STATEABBR = 'WV'
+        elif poly.STATEFP == '55': poly.STATEABBR = 'WI'
+        elif poly.STATEFP == '56': poly.STATEABBR = 'WY'
+        else:
+            print(poly.STATEFP)
+        poly.save()
+
+
 def add_state_abbr():
     counties = County.objects.all()
     cities = City.objects.all()
@@ -261,6 +338,15 @@ def merge_county_city():
                                INTPTLON=c.INTPTLON, mpoly=c.mpoly, PCICBSA=c.PCICBSA, PCINECTA=c.PCINECTA)
         print('%i Created Polygon for City: %s' % (i, c.NAMELSAD))
         i += 1
+
+
+def merge_state():
+    states = State.objects.all()
+    for s in states:
+        Polygon.objects.create(STATEFP=s.STATEFP, STATEABBR=s.STUSPS, POLYFP=s.STATEFP, POLYNS=s.STATENS,
+                               GEOID=s.GEOID, NAME=s.NAME, NAMELSAD=s.NAME, LSAD=s.LSAD, CLASSFP='',
+                               MTFCC=s.MTFCC, FUNCSTAT=s.FUNCSTAT, ALAND=s.ALAND, AWATER=s.AWATER, INTPTLAT=s.INTPTLAT,
+                               INTPTLON=s.INTPTLON, mpoly=s.mpoly, REGION=s.REGION, DIVISION=s.DIVISION)
 
 
 # Iterative Binary Search Function

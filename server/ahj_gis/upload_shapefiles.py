@@ -3,6 +3,30 @@ from django.contrib.gis.utils import LayerMapping
 from core.models import AHJ, Address
 from .models import *
 
+
+state_mapping = {
+    'REGION': 'REGION',
+    'DIVISION': 'DIVISION',
+    'STATEFP': 'STATEFP',
+    'STATENS': 'STATENS',
+    'GEOID': 'GEOID',
+    'STUSPS': 'STUSPS',
+    'NAME': 'NAME',
+    'LSAD': 'LSAD',
+    'MTFCC': 'MTFCC',
+    'FUNCSTAT': 'FUNCSTAT',
+    'ALAND': 'ALAND',
+    'AWATER': 'AWATER',
+    'INTPTLAT': 'INTPTLAT',
+    'INTPTLON': 'INTPTLON',
+    'mpoly': 'MULTIPOLYGON'
+}
+
+state_shp = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'data', 'tl_2019_us_state/tl_2019_us_state.shp'),
+)
+
+
 county_mapping = {
     'STATEFP': 'STATEFP',
     'COUNTYFP': 'COUNTYFP',
@@ -46,7 +70,7 @@ county_mapping10 = {
 }
 
 county_shp = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), 'data', 'tl_2019_us_county/tl_2019_us_county.shp'),
+    os.path.join(os.path.dirname(__file__), 'data', 'tl_2010_02_county10/tl_2010_02_county10.shp'),
 )
 
 city_mapping = {
@@ -94,11 +118,16 @@ city_shp = os.path.abspath(
 )
 
 
+def run_state(verbose=True):
+    lm = LayerMapping(State, state_shp, state_mapping, transform=False)
+    lm.save(strict=True, verbose=verbose)
+
+
 def run_county(verbose=True):
-    lm = LayerMapping(County, county_shp, county_mapping, transform=False)
+    lm = LayerMapping(County, county_shp, county_mapping10, transform=False)
     lm.save(strict=True, verbose=verbose)
 
 
 def run_city():
-    lm = LayerMapping(City, os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', city_shp),), city_mapping, transform=False)
+    lm = LayerMapping(City, os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', city_shp),), city_mapping10, transform=False)
     lm.save(strict=True, verbose=True)
