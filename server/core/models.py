@@ -6,7 +6,8 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ValidationError
 from ahj_gis.models import Polygon
-
+from django.apps import apps
+import json
 from taggit.managers import TaggableManager
 from simple_history.models import HistoricalRecords
 
@@ -50,8 +51,8 @@ RESIDENTIAL_CODE_CHOICES = [
 
 WIND_CODE_CHOICES = [
     ('ASCE716', 'ASCE7-16'),
-    ('ASCE716', 'ASCE7-16'),
-    ('ASCE716', 'ASCE7-16'),
+    ('ASCE710', 'ASCE7-10'),
+    ('ASCE705', 'ASCE7-05'),
     ('SpecialWindZone', 'Special Wind Zone')
 ]
 
@@ -215,9 +216,6 @@ class AHJ(models.Model):
     WindCodeNotes = models.CharField(blank=True, max_length=255)
     history = HistoricalRecords()
 
-    def __str__(self):
-        return self.AHJName + ', ' + Address.objects.get(AHJ=self).StateProvince
-
 
 class Contact(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
@@ -271,3 +269,21 @@ class Location(models.Model):
     LocationType = models.CharField(choices=LOCATION_TYPE_CHOICES, blank=True, default='', max_length=45)
     Longitude = models.DecimalField(null=True, max_digits=9, decimal_places=6)
     history = HistoricalRecords()
+
+
+class Edit(models.Model):
+    RecordID = models.CharField(max_length=45)
+    RecordType = models.CharField(max_length=45)
+    EditType = models.CharField(max_length=45)
+    FieldName = models.CharField(max_length=45)
+    Value = models.TextField()
+    PreviousValue = models.TextField()
+    ModifyingUserID = models.IntegerField()
+    ModifiedDate = models.DateTimeField()
+    IsConfirmed = models.BooleanField(default=False)
+    ConfirmingUserID = models.IntegerField(default=None)
+    ConfirmedDate = models.DateTimeField(default=None)
+    VoteRating = models.IntegerField(default=0)
+
+    def get_record_owner_id(self):
+        return self.RecordID # wrong for now, add user ownership next

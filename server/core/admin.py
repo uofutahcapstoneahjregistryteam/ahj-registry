@@ -3,6 +3,7 @@ from simple_history.admin import SimpleHistoryAdmin
 from .models import *
 
 
+admin.site.register(Edit)
 admin.site.register(AHJ, SimpleHistoryAdmin)
 admin.site.register(Address, SimpleHistoryAdmin)
 admin.site.register(Location, SimpleHistoryAdmin)

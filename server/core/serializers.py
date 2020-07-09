@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from .models import *
+from django.apps import apps
 
 
 class OrangeButtonUUIDFieldSerializer(serializers.UUIDField):
@@ -410,6 +411,17 @@ class AHJSerializer(serializers.ModelSerializer):
                     engineering_review_requirement_serializer.create(instance, engineering_review_requirements_data[i])
 
         return instance
+
+
+class EditSerializer(serializers.ModelSerializer):
+    RecordID = serializers.CharField(required=False)
+    PreviousValue = serializers.CharField(required=False)
+    ModifyingUserID = serializers.IntegerField(required=False)
+    ModifiedDate = serializers.DateTimeField(required=False)
+
+    class Meta:
+        model = Edit
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):

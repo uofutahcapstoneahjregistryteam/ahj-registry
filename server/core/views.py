@@ -7,7 +7,7 @@ from .filters import *
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.views import ObtainAuthToken
-from .utils import get_ahj_diff
+from .utils import *
 
 import csv, io
 from django.shortcuts import render
@@ -56,6 +56,26 @@ def get_ahj_history(request, pk):
     except AHJ.DoesNotExist:
         return Response({'detail': 'AHJ does not exist'})
     return get_ahj_diff(ahj)
+
+
+@api_view(['POST'])
+def submit_edit(request):
+    if request.auth is None:
+        return Response(request.detail)
+    record_type = request.data.get('RecordType')
+    if record_type is None:
+        return Response({'detail': 'RecordType is required.'})
+    return create_edit(request)
+
+
+@api_view(['POST'])
+def modify_edit(request):
+    if request.auth is None:
+        return Response(request.detail)
+    record_type = request.data.get('id')
+    if record_type is None:
+        return Response({'detail': 'Edit ID is required.'})
+    return update_edit(request)
 
 
 class AHJList(generics.ListCreateAPIView):

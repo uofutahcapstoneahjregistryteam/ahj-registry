@@ -39,6 +39,9 @@ class Polygon(models.Model):
     PCICBSA = models.CharField(default='', max_length=1)
     PCINECTA = models.CharField(default='', max_length=1)
 
+    def __str__(self):
+        return self.NAMELSAD + ', ' + self.STATEABBR
+
 
 # Census county shapefile model
 class County(models.Model):
