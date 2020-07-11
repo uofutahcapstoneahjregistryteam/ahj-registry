@@ -260,7 +260,7 @@ class Address(models.Model):
 
 
 class Location(models.Model):
-    Address = models.OneToOneField(Address, on_delete=models.CASCADE, primary_key=True)
+    Address = models.OneToOneField(Address, on_delete=models.CASCADE)
     Altitude = models.DecimalField(null=True, max_digits=15, decimal_places=6)
     Description = models.TextField(blank=True)
     Elevation = models.DecimalField(null=True, max_digits=15, decimal_places=6)
@@ -275,14 +275,14 @@ class Edit(models.Model):
     RecordID = models.CharField(max_length=45)
     RecordType = models.CharField(max_length=45)
     EditType = models.CharField(max_length=45)
-    FieldName = models.CharField(max_length=45)
-    Value = models.TextField()
-    PreviousValue = models.TextField()
+    FieldName = models.CharField(default='', max_length=45)
+    Value = models.TextField(default='')
+    PreviousValue = models.TextField(default='')
     ModifyingUserID = models.IntegerField()
     ModifiedDate = models.DateTimeField()
     IsConfirmed = models.BooleanField(default=False)
-    ConfirmingUserID = models.IntegerField(default=None)
-    ConfirmedDate = models.DateTimeField(default=None)
+    ConfirmingUserID = models.IntegerField(null=True, default=None)
+    ConfirmedDate = models.DateTimeField(null=True, default=None)
     VoteRating = models.IntegerField(default=0)
 
     def get_record_owner_id(self):

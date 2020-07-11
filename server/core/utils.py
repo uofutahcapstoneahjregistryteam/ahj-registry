@@ -167,15 +167,13 @@ def create_edit(request):
             edit.ConfirmedDate = timezone.now()
             edit.VoteRating = 0
             apply_edit(edit)
-            edit.save()
-            if edit.EditType == 'create':
-                return Response(EditSerializer(edit).data)
             return Response(EditSerializer(edit).data)
         else:
             edit.IsConfirmed = False
             edit.ConfirmingUserID = None
             edit.ConfirmedDate = None
             edit.VoteRating = 0
+            edit.save()
 
         return Response({'detail': 'success'})
     return Response(edit_serializer.errors)
@@ -194,7 +192,6 @@ def update_edit(request):
                 edit.ConfirmingUserID = request.user.id
                 edit.ConfirmedDate = timezone.now()
                 apply_edit(edit)
-                edit.save()
         elif request.user.id == edit.ModifyingUserID:
             if edit.EditType == 'create':
                 try:
@@ -215,16 +212,37 @@ def update_edit(request):
 def get_record_serializer(data, record_type):
     if record_type == 'AHJ':
         return AHJSerializer(data=data)
+    elif record_type == 'Address':
+        return AddressSerializer(data=data)
+    elif record_type == 'Location':
+        return LocationSerializer(data=data)
 
 
 def apply_edit(edit):
-        if edit.EditType == 'create': # need to test that the json is valid during edit creation, not confirmation
-            serializer = get_record_serializer(json.loads(edit.Value), edit.RecordType)
-            if serializer.is_valid():
-                record = apps.get_model('core', edit.RecordType).objects.create(**serializer.validated_data)
-                if edit.RecordType == 'AHJ':
-                    edit.RecordID = record.AHJID
-                else:
-                    edit.RecordID = record.id
-        elif edit.EditType == 'update':
-            print('applying update: ' + edit.RecordType)
+    if edit.EditType == 'create':
+        serializer = get_record_serializer(json.loads(edit.Value), edit.RecordType)
+        if serializer.is_valid():
+            serializer.create(serializer.validated_data, edit)
+    elif edit.EditType == 'update':
+        # must check if record still exists
+        record = get_record(edit.RecordID, edit.RecordType)
+        if record is not None:
+            # It was already checked when edit was created that FieldName is valid
+            setattr(record, edit.FieldName, edit.Value)
+            record.save()
+            edit.save()
+    elif edit.EditType == 'delete':
+        record = get_record(edit.RecordID, edit.RecordType)
+        if record is not None:
+            record.delete()
+        # Need to create edits to record deleting child objects
+        edit.save()
+
+
+def get_record(record_id, record_type):
+    record = None
+    if record_type == 'AHJ':
+        record = AHJ.objects.filter(AHJID=record_id).first()
+    else:
+        record = apps.get_model('core', record_type).objects.filter(pk=record_type).first()
+    return record

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from .models import *
-from django.apps import apps
 
 
 class OrangeButtonUUIDFieldSerializer(serializers.UUIDField):
@@ -49,7 +48,7 @@ class OrangeButtonDecimalFieldSerializer(serializers.DecimalField):
         return data['Value']
 
 
-class LocationSerializer(serializers.ModelSerializer):
+class LocationSerializer(serializers.Serializer):
     LocationID = OrangeButtonIntegerFieldSerializer(source='Address_id', required=False)
     Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
     Description = OrangeButtonCharFieldSerializer(required=False)
@@ -59,25 +58,12 @@ class LocationSerializer(serializers.ModelSerializer):
     LocationType = OrangeButtonCharFieldSerializer(required=False)
     Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=9, decimal_places=6)
 
-    class Meta:
-        model = Location
-        fields = [
-            'Altitude',
-            'Description',
-            'Elevation',
-            'Latitude',
-            'LocationDeterminationMethod',
-            'LocationType',
-            'Longitude',
-            'Description',
-            'LocationID'
-        ]
-
-    def create(self, address, validated_data):
+    def create(self, address, validated_data, edit):
         if validated_data.get('Address_id') is not None:
             validated_data.pop('Address_id')
-
-        return Location.objects.create(Address=address, **validated_data)
+        location = Location.objects.create(Address=address, **validated_data)
+        add_create_edits(location, edit)
+        return location
 
     def update(self, instance, validated_data):
         instance.Altitude = validated_data.get('Altitude', instance.Altitude)
@@ -90,8 +76,12 @@ class LocationSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def __delete__(self, instance, edit):
+        add_delete_edits(instance, edit)
+        instance.delete()
 
-class AddressSerializer(serializers.ModelSerializer):
+
+class AddressSerializer(serializers.Serializer):
     AddressID = OrangeButtonCharFieldSerializer(source='id', required=False)
     AddrLine1 = OrangeButtonCharFieldSerializer(required=False)
     AddrLine2 = OrangeButtonCharFieldSerializer(required=False)
@@ -105,25 +95,7 @@ class AddressSerializer(serializers.ModelSerializer):
     ZipPostalCode = OrangeButtonCharFieldSerializer(required=False)
     Location = LocationSerializer(source='location', many=False, required=False, allow_null=True)
 
-    class Meta:
-        model = Address
-        fields = [
-            'AddrLine1',
-            'AddrLine2',
-            'AddrLine3',
-            'AddressType',
-            'City',
-            'Country',
-            'County',
-            'Description',
-            'StateProvince',
-            'ZipPostalCode',
-            'Location',
-            'AddressID'
-        ]
-
-    def create(self, model_object, model_object_type, validated_data):
-
+    def create(self, model_object, model_object_type, validated_data, edit):
         # Do not specify an id for a new address
         if validated_data.get('id') is not None:
             validated_data.pop('id')
@@ -133,14 +105,15 @@ class AddressSerializer(serializers.ModelSerializer):
         if validated_data.get('location') is not None:
             location_data = validated_data.pop('location')
 
+        address = None
         if model_object_type == 'AHJ':
             address = Address.objects.create(AHJ=model_object, **validated_data)
         elif model_object_type == 'Contact':
             address = Address.objects.create(Contact=model_object, **validated_data)
-
+        add_create_edits(address, edit)
         # If location object did exist, deserialize it
         if location_data is not None:
-            LocationSerializer().create(address, location_data)
+            LocationSerializer().create(address, location_data, edit)
         return address
 
     def update(self, instance, validated_data):
@@ -166,8 +139,15 @@ class AddressSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def __delete__(self, instance, edit):
+        add_delete_edits(instance, edit)
+        address_location = Location.objects.filter(Address=instance).first()
+        if address_location is not None:
+            LocationSerializer().__delete__(address_location, edit)
+        instance.delete()
 
-class ContactSerializer(serializers.ModelSerializer):
+
+class ContactSerializer(serializers.Serializer):
     ContactID = OrangeButtonIntegerFieldSerializer(source='id', required=False)
     ContactType = OrangeButtonCharFieldSerializer(required=False)
     Description = OrangeButtonCharFieldSerializer(required=False)
@@ -179,23 +159,6 @@ class ContactSerializer(serializers.ModelSerializer):
     MobilePhone = OrangeButtonCharFieldSerializer(required=False)
     WorkPhone = OrangeButtonCharFieldSerializer(required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
-
-    class Meta:
-        model = Contact
-        fields = [
-            'ContactType',
-            'Description',
-            'Email',
-            'FirstName',
-            'HomePhone',
-            'LastName',
-            'MiddleName',
-            'MobilePhone',
-            'WorkPhone',
-            'Address',
-            'Description',
-            'ContactID'
-        ]
 
     def create(self, ahj, validated_data):
         address_data = None
@@ -234,28 +197,20 @@ class ContactSerializer(serializers.ModelSerializer):
         return instance
 
 
-class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
+class EngineeringReviewRequirementSerializer(serializers.Serializer):
     EngineeringReviewRequirementID = OrangeButtonIntegerFieldSerializer(source='id', required=False)
     RequirementLevel = OrangeButtonCharFieldSerializer(required=False)
     StampType = OrangeButtonCharFieldSerializer(required=False)
     Description = OrangeButtonCharFieldSerializer(required=False)
     EngineeringReviewType = OrangeButtonCharFieldSerializer(required=False)
 
-    class Meta:
-        model = EngineeringReviewRequirement
-        fields = [
-            'EngineeringReviewType',
-            'RequirementLevel',
-            'StampType',
-            'Description',
-            'EngineeringReviewRequirementID'
-        ]
-
     def create(self, ahj, validated_data):
         # Do not specify an id for a new engRevReq record
         if validated_data.get('id') is not None:
             validated_data.pop('id')
-        return EngineeringReviewRequirement.objects.create(AHJ=ahj, **validated_data)
+        eng_rev_req = EngineeringReviewRequirement.objects.create(AHJ=ahj, **validated_data)
+        # create_edits(eng_rev_req, edit)
+        return eng_rev_req
 
     def update(self, instance, validated_data):
         instance.Description = validated_data.get('Description', instance.Description)
@@ -266,7 +221,7 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
         return instance
 
 
-class AHJSerializer(serializers.ModelSerializer):
+class AHJSerializer(serializers.Serializer):
     AHJID = OrangeButtonCharFieldSerializer(required=False)
     AHJName = OrangeButtonCharFieldSerializer(required=False)
     BuildingCode = OrangeButtonCharFieldSerializer(required=False)
@@ -286,30 +241,7 @@ class AHJSerializer(serializers.ModelSerializer):
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
 
-    class Meta:
-        model = AHJ
-        fields = [
-            'AHJID',
-            'AHJName',
-            'BuildingCode',
-            'BuildingCodeNotes',
-            'Description',
-            'DocumentSubmissionMethod',
-            'DocumentSubmissionMethodNotes',
-            'ElectricCode',
-            'ElectricCodeNotes',
-            'FireCode',
-            'FireCodeNotes',
-            'ResidentialCode',
-            'ResidentialCodeNotes',
-            'WindCode',
-            'WindCodeNotes',
-            'Address',
-            'Contacts',
-            'EngineeringReviewRequirements'
-        ]
-
-    def create(self, validated_data):
+    def create(self, validated_data, edit):
         address_data = None
         contacts_data = None
         engineering_review_requirements_data = None
@@ -323,9 +255,12 @@ class AHJSerializer(serializers.ModelSerializer):
             engineering_review_requirements_data = validated_data.pop('engineeringreviewrequirement_set')
 
         ahj = AHJ.objects.create(**validated_data)
+        edit.RecordID = ahj.AHJID
+        edit.save()
+        add_create_edits(ahj, edit)
 
         if address_data is not None:
-            AddressSerializer().create(ahj, 'AHJ', address_data)
+            AddressSerializer().create(ahj, 'AHJ', address_data, edit)
 
         if contacts_data is not None:
             contact_serializer = ContactSerializer()
@@ -412,10 +347,18 @@ class AHJSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def __delete__(self, instance, edit):
+        ahj_address = Address.objects.filter(AHJ=instance).first()
+        if ahj_address is not None:
+            AddressSerializer().__delete__(ahj_address, edit)
+        instance.delete()
+
 
 class EditSerializer(serializers.ModelSerializer):
     RecordID = serializers.CharField(required=False)
     PreviousValue = serializers.CharField(required=False)
+    FieldName = serializers.CharField(required=False)
+    Value = serializers.CharField(required=False)
     ModifyingUserID = serializers.IntegerField(required=False)
     ModifiedDate = serializers.DateTimeField(required=False)
 
@@ -470,3 +413,26 @@ class AHJHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = AHJ.history.model
         fields = '__all__'
+
+
+def add_create_edits(record, edit):
+    for attr, value in record.__dict__.items():
+        if attr == '_state' or attr == 'id' or attr == 'AHJID':
+            continue
+        if value is not None and value != '':
+            if record.__class__.__name__ == 'AHJ':
+                Edit.objects.create(RecordID=record.AHJID, RecordType=record.__class__.__name__, EditType='update', FieldName=attr,
+                                    Value=value, ModifyingUserID=edit.ModifyingUserID, ModifiedDate=edit.ModifiedDate,
+                                    IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID, ConfirmedDate=edit.ConfirmedDate)
+            else:
+                Edit.objects.create(RecordID=record.id, RecordType=record.__class__.__name__, EditType='update', FieldName=attr,
+                                    Value=value, ModifyingUserID=edit.ModifyingUserID, ModifiedDate=edit.ModifiedDate,
+                                    IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID, ConfirmedDate=edit.ConfirmedDate)
+
+
+def add_delete_edits(record, edit):
+    # The record will never be an AHJ record
+    Edit.objects.create(RecordID=record.id, RecordType=record.__class__.__name__, EditType='delete', ModifyingUserID=edit.ModifyingUserID,
+                        ModifiedDate=edit.ModifiedDate, IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID,
+                        ConfirmedDate=edit.ConfirmedDate)
+
