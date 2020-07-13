@@ -68,14 +68,18 @@ def submit_edit(request):
     return create_edit(request)
 
 
-@api_view(['POST'])
-def modify_edit(request):
+@api_view(['GET'])
+def edit_detail(request, pk):
     if request.auth is None:
         return Response(request.detail)
-    record_type = request.data.get('id')
-    if record_type is None:
-        return Response({'detail': 'Edit ID is required.'})
-    return update_edit(request)
+    edit = Edit.objects.filter(pk=pk).first()
+    if edit is None:
+        return Response({'detail': 'Edit not found'})
+    if request.GET.get('confirm', '') != '':
+        return set_edit_status(request, edit)
+    if request.GET.get('vote', '') != '':
+        return set_edit_vote(request, edit)
+    return Response(EditSerializer(edit).data)
 
 
 class AHJList(generics.ListCreateAPIView):

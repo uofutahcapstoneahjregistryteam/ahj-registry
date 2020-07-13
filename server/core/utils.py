@@ -146,83 +146,59 @@ def create_edit(request):
     edit_serializer = EditSerializer(data=request.data)
     if edit_serializer.is_valid():
         edit = Edit(**edit_serializer.validated_data)
-        if edit.EditType == 'create':
-            record_serializer = get_record_serializer(json.loads(edit.Value), edit.RecordType)
-            if not record_serializer.is_valid():
-                return Response(record_serializer.errors)
-        elif edit.EditType == 'update':
-            record = None
-            if edit.RecordType == 'AHJ':
-                record = apps.get_model('core', edit.RecordType).objects.filter(AHJID=edit.RecordID).first()
-            else:
-                record = apps.get_model('core', edit.RecordType).objects.filter(id=edit.RecordID).first()
-            if not hasattr(record, edit.FieldName):
-                return Response({'detail': 'FieldName not found.'})
-            edit.PreviousValue = getattr(record, edit.FieldName)
         edit.ModifyingUserID = request.user.id
-        edit.ModifiedDate = timezone.now()
+
+        if edit.EditType == 'create':
+            record = apps.get_model('core', edit.RecordType).objects.create()
+            if edit.RecordType == 'AHJ':
+                edit.RecordID = record.AHJID
+            else:
+                edit.RecordID = record.id
+        elif edit.EditType == 'update':
+            record = get_record(edit.RecordID, edit.RecordType)
+            if not hasattr(record, edit.FieldName):
+                return Response({'detail': 'Record does not have given field name.'})
+            edit.PreviousValue = getattr(record, edit.FieldName)
+
         if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
             edit.IsConfirmed = True
             edit.ConfirmingUserID = request.user.id
             edit.ConfirmedDate = timezone.now()
-            edit.VoteRating = 0
             apply_edit(edit)
             return Response(EditSerializer(edit).data)
         else:
-            edit.IsConfirmed = False
-            edit.ConfirmingUserID = None
-            edit.ConfirmedDate = None
-            edit.VoteRating = 0
             edit.save()
-
-        return Response({'detail': 'success'})
+            return Response(EditSerializer(edit).data)
     return Response(edit_serializer.errors)
 
 
-def update_edit(request):
-    edit = Edit.objects.filter(pk=request.data.get('id')).first()
-    if edit is None:
-        return Response({'detail': 'Edit not found'})
-    edit_serializer = EditSerializer(data=request.data)
-    if edit_serializer.is_valid():
-        validated_data = edit_serializer.validated_data
-        if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
-            if not edit.IsConfirmed and validated_data.get('IsConfirmed'):
-                edit.IsConfirmed = True
-                edit.ConfirmingUserID = request.user.id
-                edit.ConfirmedDate = timezone.now()
-                apply_edit(edit)
-        elif request.user.id == edit.ModifyingUserID:
-            if edit.EditType == 'create':
-                try:
-                    record_serializer = get_record_serializer(json.loads(validated_data.get('Value')), edit.RecordType)
-                except json.decoder.JSONDecodeError:
-                    return Response({'detail': 'JSON syntax error'})
-                if not record_serializer.is_valid():
-                    return Response(record_serializer.errors)
-                edit.Value = validated_data.get('Value')
-                edit.save()
-            elif edit.EditType == 'update':
-                edit.Value = validated_data.get('Value')
-                edit.save()
+def set_edit_status(request, edit):
+    if edit.IsConfirmed is not None:
+        return Response({'detail': 'Edit has already been processed. Please submit another edit.'})
+    if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
+        confirm_status = request.GET.get('confirm')
+        if confirm_status == 'accepted':
+            edit.IsConfirmed = True
+            edit.ConfirmingUserID = request.user.id
+            edit.ConfirmedDate = timezone.now()
+            apply_edit(edit)
+        elif confirm_status == 'rejected':
+            edit.IsConfirmed = False
+            edit.ConfirmingUserID = request.user.id
+            edit.ConfirmedDate = timezone.now()
+            edit.save()
         return Response(EditSerializer(edit).data)
-    return Response(edit_serializer.errors)
+    else:
+        return Response({'detail': 'Could not confirm edit'})
 
 
-def get_record_serializer(data, record_type):
-    if record_type == 'AHJ':
-        return AHJSerializer(data=data)
-    elif record_type == 'Address':
-        return AddressSerializer(data=data)
-    elif record_type == 'Location':
-        return LocationSerializer(data=data)
+def set_edit_vote(request, edit):
+    return Response({'detail': 'voted'})
 
 
 def apply_edit(edit):
     if edit.EditType == 'create':
-        serializer = get_record_serializer(json.loads(edit.Value), edit.RecordType)
-        if serializer.is_valid():
-            serializer.create(serializer.validated_data, edit)
+        edit.save()
     elif edit.EditType == 'update':
         # must check if record still exists
         record = get_record(edit.RecordID, edit.RecordType)
@@ -240,7 +216,6 @@ def apply_edit(edit):
 
 
 def get_record(record_id, record_type):
-    record = None
     if record_type == 'AHJ':
         record = AHJ.objects.filter(AHJID=record_id).first()
     else:

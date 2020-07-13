@@ -356,6 +356,8 @@ class AHJSerializer(serializers.Serializer):
 
 class EditSerializer(serializers.ModelSerializer):
     RecordID = serializers.CharField(required=False)
+    ParentID = serializers.CharField(required=False)
+    ParentRecordType = serializers.CharField(required=False)
     PreviousValue = serializers.CharField(required=False)
     FieldName = serializers.CharField(required=False)
     Value = serializers.CharField(required=False)
