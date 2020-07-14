@@ -146,25 +146,28 @@ def create_edit(request):
     edit_serializer = EditSerializer(data=request.data)
     if edit_serializer.is_valid():
         edit = Edit(**edit_serializer.validated_data)
+
+        if not edit.validate_RecordType():
+            return Response({'detail': 'Invalid record type'})
+
+        if edit.ParentRecordType != '' and not edit.validate_ParentRecordType():
+            return Response({'detail': 'Invalid parent record type'})
+
         edit.ModifyingUserID = request.user.id
 
         if edit.EditType == 'create':
-            record = apps.get_model('core', edit.RecordType).objects.create()
-            if edit.RecordType == 'AHJ':
-                edit.RecordID = record.AHJID
-            else:
-                edit.RecordID = record.id
+            edit.create_record()
         elif edit.EditType == 'update':
-            record = get_record(edit.RecordID, edit.RecordType)
-            if not hasattr(record, edit.FieldName):
+            if edit.RecordID == '':
+                return Response({'detail': 'No record ID was given'})
+            if edit.Value == '':
+                return Response({'detail': 'No value was given'})
+            if not edit.clean_FieldName():
                 return Response({'detail': 'Record does not have given field name.'})
-            edit.PreviousValue = getattr(record, edit.FieldName)
+            edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
 
         if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
-            edit.IsConfirmed = True
-            edit.ConfirmingUserID = request.user.id
-            edit.ConfirmedDate = timezone.now()
-            apply_edit(edit)
+            edit.accept(request.user.id)
             return Response(EditSerializer(edit).data)
         else:
             edit.save()
@@ -178,15 +181,9 @@ def set_edit_status(request, edit):
     if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
         confirm_status = request.GET.get('confirm')
         if confirm_status == 'accepted':
-            edit.IsConfirmed = True
-            edit.ConfirmingUserID = request.user.id
-            edit.ConfirmedDate = timezone.now()
-            apply_edit(edit)
+            edit.accept(user_id=request.user.id)
         elif confirm_status == 'rejected':
-            edit.IsConfirmed = False
-            edit.ConfirmingUserID = request.user.id
-            edit.ConfirmedDate = timezone.now()
-            edit.save()
+            edit.reject(user_id=request.user.id)
         return Response(EditSerializer(edit).data)
     else:
         return Response({'detail': 'Could not confirm edit'})
@@ -195,29 +192,3 @@ def set_edit_status(request, edit):
 def set_edit_vote(request, edit):
     return Response({'detail': 'voted'})
 
-
-def apply_edit(edit):
-    if edit.EditType == 'create':
-        edit.save()
-    elif edit.EditType == 'update':
-        # must check if record still exists
-        record = get_record(edit.RecordID, edit.RecordType)
-        if record is not None:
-            # It was already checked when edit was created that FieldName is valid
-            setattr(record, edit.FieldName, edit.Value)
-            record.save()
-            edit.save()
-    elif edit.EditType == 'delete':
-        record = get_record(edit.RecordID, edit.RecordType)
-        if record is not None:
-            record.delete()
-        # Need to create edits to record deleting child objects
-        edit.save()
-
-
-def get_record(record_id, record_type):
-    if record_type == 'AHJ':
-        record = AHJ.objects.filter(AHJID=record_id).first()
-    else:
-        record = apps.get_model('core', record_type).objects.filter(pk=record_type).first()
-    return record

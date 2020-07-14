@@ -82,7 +82,7 @@ def edit_detail(request, pk):
     return Response(EditSerializer(edit).data)
 
 
-class AHJList(generics.ListCreateAPIView):
+class AHJList(generics.ListAPIView):
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
@@ -90,12 +90,28 @@ class AHJList(generics.ListCreateAPIView):
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['AHJName', 'address__City', 'address__County', 'address__Country', 'address__StateProvince', 'address__ZipPostalCode']
 
+    def list(self, request):
+        view_mode = request.GET.get('view', '')
+        if view_mode == 'confirmed':
+            AHJ.confirmed_edits_only = True
+        elif view_mode == 'votes':
+            AHJ.highest_vote_ranking = True
+        return super().list(self)
 
-class AHJDetail(generics.RetrieveUpdateDestroyAPIView):
+
+class AHJDetail(generics.RetrieveAPIView):
     lookup_field = 'AHJID'
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
+
+    def get(self, request, *args, **kwargs):
+        view_mode = request.GET.get('view', '')
+        if view_mode == 'confirmed':
+            AHJ.confirmed_edits_only = True
+        elif view_mode == 'votes':
+            AHJ.highest_vote_ranking = True
+        return super().get(self)
 
 
 class ContactDetail(generics.DestroyAPIView):

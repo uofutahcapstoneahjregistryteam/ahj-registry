@@ -17,21 +17,14 @@ def find_ahj_coordinate(request):
     latitude = ''
 
     if request.data.get('Location') is None:
-        # The data is an Address
-        location_serializer = LocationSerializer(data=request.data)
-        if location_serializer.is_valid():
-            validated_data = location_serializer.validated_data
-            longitude = validated_data.get('Longitude', '')
-            latitude = validated_data.get('Latitude', '')
+        # The data is an Location
+        longitude = request.data.get('Longitude')['Value']
+        latitude = request.data.get('Latitude', '')['Value']
     else:
-        # The data is a Location
-        address_serializer = AddressSerializer(data=request.data)
-        if address_serializer.is_valid():
-            validated_data = address_serializer.validated_data
-            if validated_data.get('location') is not None:
-                location = validated_data.pop('location')
-                longitude = location.get('Longitude', '')
-                latitude = location.get('Latitude', '')
+        # The data is a Address
+        location = request.data.get('Location')
+        longitude = location.get('Longitude', '')
+        latitude = location.get('Latitude', '')
 
     if longitude == '' or latitude == '':
         return Response({'detail': 'invalid coordinates'})

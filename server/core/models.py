@@ -10,6 +10,7 @@ from django.apps import apps
 import json
 from taggit.managers import TaggableManager
 from simple_history.models import HistoricalRecords
+from django.utils import timezone
 
 import uuid
 # Authentication and Authorization
@@ -130,6 +131,43 @@ STAMP_TYPE_CHOICES = [
 ]
 
 
+def retrieve_edit(record, field_name, edit):
+    if edit is None:
+        return Edit(Value=getattr(record, field_name), FieldName=field_name)
+    else:
+        return edit
+
+    
+def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest_vote_ranking):
+    if record.__class__.__name__ == 'AHJ':
+        record_edits = Edit.objects.filter(RecordID=record.AHJID)
+    else:
+        record_edits = Edit.objects.filter(RecordID=record.id)
+
+    if find_create_edit:
+        edit = record_edits.filter(EditType='create').first()
+        return retrieve_edit(record, field_name, edit)
+
+    record_edits_field_name = record_edits.filter(FieldName=field_name)
+    if confirmed_edits_only:
+        edit = record_edits_field_name.filter(IsConfirmed=True).order_by('-ConfirmedDate').first()
+        return retrieve_edit(record, field_name, edit)
+    elif highest_vote_ranking:
+        edit = record_edits_field_name.order_by('-VoteRanking').first()
+        return retrieve_edit(record, field_name, edit)
+    else:
+        edit = record_edits_field_name.order_by('-ModifiedDate').first()
+        return retrieve_edit(record, field_name, edit)
+
+
+def add_delete_edits(record, edit):
+    # The record will never be an AHJ record
+    Edit.objects.create(RecordID=record.id, RecordType=record.__class__.__name__, EditType='delete',
+                        ModifyingUserID=edit.ModifyingUserID,
+                        ModifiedDate=edit.ModifiedDate, IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID,
+                        ConfirmedDate=edit.ConfirmedDate)
+        
+
 # Create an auth token every time a user is created
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -216,6 +254,27 @@ class AHJ(models.Model):
     WindCodeNotes = models.CharField(blank=True, max_length=255)
     history = HistoricalRecords()
 
+    confirmed_edits_only = False
+    highest_vote_ranking = False
+
+    def get_edit(self, field_name):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def get_create_edit(self):
+        return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def chain_delete(self):
+        address = Address.objects.filter(AHJ=self).first()
+        if address is not None:
+            address.chain_delete()
+        contacts = Contact.objects.filter(AHJ=self)
+        for contact in contacts:
+            contact.chain_delete()
+        eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
+        for eng_rev_req in eng_rev_reqs:
+            eng_rev_req.chain_delete()
+        self.delete()
+
 
 class Contact(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
@@ -233,6 +292,22 @@ class Contact(models.Model):
     WorkPhone = models.CharField(blank=True, max_length=31)
     history = HistoricalRecords()
 
+    confirmed_edits_only = False
+    highest_vote_ranking = False
+
+    def get_edit(self, field_name):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def get_create_edit(self):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def chain_delete(self, edit):
+        address = Address.objects.filter(Contact=self).first()
+        if address is not None:
+            address.chain_delete()
+        add_delete_edits(self, edit)
+        self.delete()
+
 
 class EngineeringReviewRequirement(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
@@ -241,6 +316,19 @@ class EngineeringReviewRequirement(models.Model):
     RequirementLevel = models.CharField(choices=REQUIREMENT_LEVEL_CHOICES, blank=True, default='', max_length=45)
     StampType = models.CharField(choices=STAMP_TYPE_CHOICES, max_length=45)
     history = HistoricalRecords()
+
+    confirmed_edits_only = False
+    highest_vote_ranking = False
+
+    def get_edit(self, field_name):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def get_create_edit(self):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def chain_delete(self, edit):
+        add_delete_edits(self, edit)
+        self.delete()
 
 
 class Address(models.Model):
@@ -258,6 +346,22 @@ class Address(models.Model):
     ZipPostalCode = models.CharField(blank=True, max_length=10)
     history = HistoricalRecords()
 
+    confirmed_edits_only = False
+    highest_vote_ranking = False
+
+    def get_edit(self, field_name):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def get_create_edit(self):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def chain_delete(self, edit):
+        location = Location.objects.filter(Address=self).first()
+        if location is not None:
+            location.delete()
+        add_delete_edits(self, edit)
+        self.delete()
+
 
 class Location(models.Model):
     Address = models.OneToOneField(Address, on_delete=models.CASCADE)
@@ -269,6 +373,19 @@ class Location(models.Model):
     LocationType = models.CharField(choices=LOCATION_TYPE_CHOICES, blank=True, default='', max_length=45)
     Longitude = models.DecimalField(null=True, max_digits=9, decimal_places=6)
     history = HistoricalRecords()
+
+    confirmed_edits_only = False
+    highest_vote_ranking = False
+
+    def get_edit(self, field_name):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def get_create_edit(self):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+
+    def chain_delete(self, edit):
+        add_delete_edits(self, edit)
+        self.delete()
 
 
 class Edit(models.Model):
@@ -289,3 +406,70 @@ class Edit(models.Model):
 
     def get_record_owner_id(self):
         return self.RecordID # wrong for now, add user ownership next
+
+    def create_record(self):
+        record = apps.get_model('core', self.RecordType).objects.create()
+        if self.RecordType == 'AHJ':
+            self.RecordID = record.AHJID
+        else:
+            self.RecordID = record.id
+        self.save()
+
+    def get_record(self):
+        if self.RecordType == 'AHJ':
+            record = AHJ.objects.filter(AHJID=self.RecordID).first()
+        else:
+            record = apps.get_model('core', self.RecordType).objects.filter(pk=self.RecordID).first()
+        return record
+
+    def get_user_confirm(self):
+        return User.objects.filter(pk=self.ConfirmingUserID).first()
+
+    def get_user_modify(self):
+        return User.objects.filter(pk=self.ModifyingUserID).first()
+
+    def accept(self, user_id):
+        self.IsConfirmed = True
+        self.ConfirmingUserID = user_id
+        self.ConfirmedDate = timezone.now()
+
+        if self.EditType == 'update':
+            record = self.get_record()
+            if record is not None:
+                create_edit = Edit.objects.filter(RecordID=self.RecordID).filter(EditType='create').first()
+                if create_edit is not None and not create_edit.IsConfirmed:
+                    return
+                setattr(record, self.FieldName, self.Value)
+                record.save()
+        elif self.EditType == 'delete':
+            self.get_record().chain_delete()
+
+        self.save()
+
+    def reject(self, user_id):
+        self.IsConfirmed = False
+        self.ConfirmingUserID = user_id
+        self.ConfirmedDate = timezone.now()
+
+        if self.EditType == 'create':
+            self.get_record().chain_delete()
+
+        self.save()
+
+    def validate_RecordType(self):
+        try:
+            apps.get_model('core', self.RecordType)
+            return True
+        except apps.LookupError:
+            return False
+
+    def validate_ParentRecordType(self):
+        try:
+            apps.get_model('core', self.RecordType)
+            return True
+        except apps.LookupError:
+            return False
+
+    def clean_FieldName(self):
+        record = self.get_record()
+        return hasattr(record, self.FieldName)
