@@ -62,9 +62,6 @@ def get_ahj_history(request, pk):
 def submit_edit(request):
     if request.auth is None:
         return Response(request.detail)
-    record_type = request.data.get('RecordType')
-    if record_type is None:
-        return Response({'detail': 'RecordType is required.'})
     return create_edit(request)
 
 
@@ -72,14 +69,7 @@ def submit_edit(request):
 def edit_detail(request, pk):
     if request.auth is None:
         return Response(request.detail)
-    edit = Edit.objects.filter(pk=pk).first()
-    if edit is None:
-        return Response({'detail': 'Edit not found'})
-    if request.GET.get('confirm', '') != '':
-        return set_edit_status(request, edit)
-    if request.GET.get('vote', '') != '':
-        return set_edit_vote(request, edit)
-    return Response(EditSerializer(edit).data)
+    return set_edit(request, pk)
 
 
 class AHJList(generics.ListAPIView):

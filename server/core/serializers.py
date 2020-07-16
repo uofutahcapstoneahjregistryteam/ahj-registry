@@ -44,28 +44,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class EditSerializer(serializers.ModelSerializer):
-    # RecordID = serializers.CharField(required=False)
-    # ParentID = serializers.CharField(required=False)
-    # ParentRecordType = serializers.CharField(required=False)
-    # PreviousValue = serializers.CharField(required=False)
+    EditID = serializers.IntegerField(source='id', required=False)
+    RecordID = serializers.CharField(required=False)
+    ParentID = serializers.CharField(required=False)
+    ParentRecordType = serializers.CharField(required=False)
+    PreviousValue = serializers.CharField(required=False)
     FieldName = serializers.CharField(required=False)
     Value = serializers.CharField(required=False)
+    IsConfirmed = serializers.NullBooleanField(required=False)
     ConfirmingUserID = UserSerializer(source='get_user_confirm', required=False)
     ModifyingUserID = UserSerializer(source='get_user_modify', required=False)
     ModifiedDate = serializers.DateTimeField(required=False)
 
     class Meta:
         model = Edit
-        fields = [
-            'id',
-            'FieldName',
-            'Value',
-            # 'PreviousValue'
-            'ModifyingUserID',
-            'ModifiedDate',
-            'ConfirmingUserID',
-            'ConfirmedDate'
-        ]
+        fields = '__all__'
 
 
 class LocationSerializer(serializers.ModelSerializer):

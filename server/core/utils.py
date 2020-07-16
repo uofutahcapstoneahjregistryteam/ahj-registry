@@ -150,21 +150,24 @@ def create_edit(request):
         if not edit.validate_RecordType():
             return Response({'detail': 'Invalid record type'})
 
-        if edit.ParentRecordType != '' and not edit.validate_ParentRecordType():
-            return Response({'detail': 'Invalid parent record type'})
-
         edit.ModifyingUserID = request.user.id
 
         if edit.EditType == 'create':
+            if edit.RecordType != 'AHJ':
+                if edit.ParentID == '' or not edit.validate_ParentRecordType():
+                    return Response({'detail': 'Invalid parent record type'})
             edit.create_record()
         elif edit.EditType == 'update':
             if edit.RecordID == '':
                 return Response({'detail': 'No record ID was given'})
             if edit.Value == '':
                 return Response({'detail': 'No value was given'})
-            if not edit.clean_FieldName():
+            if not edit.validate_FieldName():
                 return Response({'detail': 'Record does not have given field name.'})
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
+        elif edit.EditType == 'delete':
+            if not edit.check_record_edit_create_confirmed(edit.get_record()):
+                return Response({'detail': 'Cannot make delete request records awaiting confirmation'})
 
         if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
             edit.accept(request.user.id)
@@ -175,20 +178,33 @@ def create_edit(request):
     return Response(edit_serializer.errors)
 
 
-def set_edit_status(request, edit):
+def set_edit(request, pk):
+    edit = Edit.objects.filter(pk=pk).first()
+    if edit is None:
+        return Response({'detail': 'Edit not found'})
+    user = request.user
+    confirm_status = request.GET.get('confirm', '')
+    if confirm_status != '':
+        return set_edit_status(confirm_status, user, edit)
+    vote_status = request.Get.get('vote', '')
+    if vote_status != '':
+        return set_edit_vote(vote_status, user, edit)
+    return Response(EditSerializer(edit).data)
+
+
+def set_edit_status(confirm_status, user, edit):
     if edit.IsConfirmed is not None:
         return Response({'detail': 'Edit has already been processed. Please submit another edit.'})
-    if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
-        confirm_status = request.GET.get('confirm')
+    if user.is_superuser or user.id == edit.get_record_owner_id():
         if confirm_status == 'accepted':
-            edit.accept(user_id=request.user.id)
+            edit.accept(user_id=user.id)
         elif confirm_status == 'rejected':
-            edit.reject(user_id=request.user.id)
+            edit.reject(user_id=user.id)
         return Response(EditSerializer(edit).data)
     else:
         return Response({'detail': 'Could not confirm edit'})
 
 
-def set_edit_vote(request, edit):
+def set_edit_vote(vote_status, user, edit):
     return Response({'detail': 'voted'})
 

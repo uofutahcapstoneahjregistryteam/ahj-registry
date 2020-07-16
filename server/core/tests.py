@@ -1,99 +1,492 @@
-from django.test import TestCase
+from rest_framework.test import APITestCase
 from core.models import *
-from core.utils import *
+from core import views
+from core import utils
 from django.utils import timezone
-from .example_ob_json import *
+from .constants_test import *
 import json
 from .serializers import *
 
 
-class EditTestCase(TestCase):
+class EditTestCase(APITestCase):
     def setUp(self):
-        AHJ.objects.create(AHJName='before', BuildingCode='2021IBC')
+        self.superuser = User.objects.create(email_address='super', password='super', is_superuser=True, is_active=True)
+        self.user = User.objects.create(email_address='user', password='user', is_active=True)
 
-    def test_create_edit_AHJ_only(self):
-        edit = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ONLY, ModifyingUserID=1,
-                                   ModifiedDate=timezone.now())
-        apply_edit(edit)
-        self.assertTrue(AHJ.objects.filter(AHJID=edit.RecordID).exists())
-        created_ahj = AHJ.objects.get(AHJID=edit.RecordID)
-        added_create_edits = Edit.objects.filter(RecordID=created_ahj.AHJID).exclude(EditType='create')
+    """
+    Test creating records with Edit
+    """
 
-        # Number of fields excluding AHJID, Address, Contacts, and EngineeringReviewRequirements
-        self.assertTrue(len(added_create_edits), 14)
-        for e in added_create_edits:
-            self.assertTrue(e.Value, getattr(created_ahj, e.FieldName))
+    def test_edit_create_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
 
-    def test_create_edit_AHJ_Address(self):
-        edit = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ADDRESS, ModifyingUserID=1,
-                                   ModifiedDate=timezone.now())
-        apply_edit(edit)
-        self.assertTrue(AHJ.objects.filter(AHJID=edit.RecordID).exists())
-        self.assertTrue(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=edit.RecordID)))
-        created_address = Address.objects.get(AHJ=AHJ.objects.get(AHJID=edit.RecordID))
-        added_create_edits = Edit.objects.filter(RecordID=created_address.id).exclude(EditType='create')
+        self.assertTrue(response.status_code == 200)
 
-        # Number of fields excluding Location
-        self.assertTrue(len(added_create_edits), 10)
-        for e in added_create_edits:
-            self.assertTrue(e.Value, getattr(created_address, e.FieldName))
+        AHJID = response.json()['RecordID']
 
-    def test_create_edit_AHJ_Address_Location(self):
-        edit = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ADDRESS_LOCATION, ModifyingUserID=1,
-                                   ModifiedDate=timezone.now())
-        apply_edit(edit)
-        self.assertTrue(AHJ.objects.filter(AHJID=edit.RecordID).exists())
-        self.assertTrue(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=edit.RecordID)).exists())
-        self.assertTrue(Location.objects.filter(Address=Address.objects.get(AHJ=AHJ.objects.get(AHJID=edit.RecordID))).exists())
-        created_location = Location.objects.get(Address=Address.objects.get(AHJ=AHJ.objects.get(AHJID=edit.RecordID)))
-        added_create_edits = Edit.objects.filter(RecordID=created_location.id).exclude(EditType='create')
+        self.assertTrue(AHJ.objects.filter(AHJID=AHJID).exists())
 
-        # Number of fields excluding Location
-        self.assertTrue(len(added_create_edits), 7)
-        for e in added_create_edits:
-            self.assertTrue(e.Value, getattr(created_location, e.FieldName))
+    def test_edit_create_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
 
-    def test_update_edit_AHJ_AHJName(self):
-        edit = Edit.objects.create(RecordID=AHJ.objects.get(AHJName='before').AHJID, RecordType='AHJ', EditType='update',
-                                   FieldName='AHJName', Value='after', ModifyingUserID=1, ModifiedDate=timezone.now())
-        apply_edit(edit)
-        self.assertEqual(AHJ.objects.get(AHJID=edit.RecordID).AHJName, edit.Value)
+        self.assertTrue(address_response.status_code == 200)
 
-    # def test_update_edit_AHJ_BuildingCode_invalid_value(self):
-    #     edit = Edit.objects.create(RecordID=AHJ.objects.get(AHJName='before').AHJID, RecordType='AHJ', EditType='update',
-    #                                FieldName='BuildingCode', Value='invalid', ModifyingUserID=1, ModifiedDate=timezone.now())
-    #     apply_edit(edit)
-    #     self.assertNotEqual(AHJ.objects.get(AHJID=edit.RecordID).BuildingCode, edit.Value)
+        address_id = address_response.json()['RecordID']
 
-    def test_delete_edit_AHJ_only(self):
-        create = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ONLY, ModifyingUserID=1,
-                                     ModifiedDate=timezone.now())
-        apply_edit(create)
-        delete = Edit.objects.create(RecordID=create.RecordID, RecordType='AHJ', EditType='delete', ModifyingUserID=1, ModifiedDate=timezone.now())
-        apply_edit(delete)
-        self.assertFalse(AHJ.objects.filter(AHJID=delete.RecordID).exists())
+        self.assertTrue(Address.objects.filter(id=address_id).exists())
+        self.assertTrue(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
 
-    def test_delete_edit_AHJ_Address(self):
-        create = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ADDRESS, ModifyingUserID=1,
-                                     ModifiedDate=timezone.now())
-        apply_edit(create)
-        address = Address.objects.get(AHJ=AHJ.objects.get(AHJID=create.RecordID))
-        delete = Edit.objects.create(RecordID=create.RecordID, RecordType='AHJ', EditType='delete', ModifyingUserID=1, ModifiedDate=timezone.now())
-        apply_edit(delete)
-        self.assertFalse(AHJ.objects.filter(AHJID=delete.RecordID).exists())
-        self.assertFalse(Address.objects.filter(id=address.id).exists())
-        self.assertTrue(Edit.objects.filter(RecordID=address.id).exists())
+    def test_edit_create_Contact(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
 
-    def test_delete_edit_AHJ_Address_Location(self):
-        create = Edit.objects.create(RecordType='AHJ', EditType='create', Value=AHJ_ADDRESS_LOCATION, ModifyingUserID=1,
-                                     ModifiedDate=timezone.now())
-        apply_edit(create)
-        address = Address.objects.get(AHJ=AHJ.objects.get(AHJID=create.RecordID))
-        location = Location.objects.get(Address=address)
-        delete = Edit.objects.create(RecordID=create.RecordID, RecordType='AHJ', EditType='delete', ModifyingUserID=1, ModifiedDate=timezone.now())
-        apply_edit(delete)
-        self.assertFalse(AHJ.objects.filter(AHJID=delete.RecordID).exists())
-        self.assertFalse(Address.objects.filter(id=address.id).exists())
-        self.assertFalse(Location.objects.filter(id=location.id).exists())
-        self.assertTrue(Edit.objects.filter(RecordID=address.id).exists())
-        self.assertTrue(Edit.objects.filter(RecordID=location.id).exists())
+        self.assertTrue(contact_response.status_code == 200)
+
+        contact_id = contact_response.json()['RecordID']
+
+        self.assertTrue(Contact.objects.filter(id=contact_id).exists())
+        self.assertTrue(Contact.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_create_EngineeringReviewRequirement(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        eng_rev_req_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+
+        self.assertTrue(eng_rev_req_response.status_code == 200)
+
+        eng_rev_req_id = eng_rev_req_response.json()['RecordID']
+
+        self.assertTrue(EngineeringReviewRequirement.objects.filter(id=eng_rev_req_id).exists())
+        self.assertTrue(EngineeringReviewRequirement.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_create_Address_Location(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_response.json()['RecordID']
+        locaiton_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(address_id))
+
+        self.assertTrue(locaiton_response.status_code == 200)
+
+        location_id = locaiton_response.json()['RecordID']
+
+        self.assertTrue(Location.objects.filter(id=location_id).exists())
+        self.assertTrue(Location.objects.filter(Address=Address.objects.get(id=address_id)).exists())
+
+    def test_edit_create_Contact_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+
+        self.assertTrue(address_response.status_code == 200)
+
+        address_id = address_response.json()['RecordID']
+
+        self.assertTrue(Address.objects.filter(id=address_id).exists())
+        self.assertTrue(Address.objects.filter(Contact=Contact.objects.get(id=contact_id)).exists())
+
+    def test_edit_create_confirm_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        edit_id = ahj_response.json()['id']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        edit_id = address_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_unconfirmed_parent_block_confirm_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        edit_id = address_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_Contact(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        edit_id = contact_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_unconfirmed_parent_block_confirm_Contact(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        edit_id = contact_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_EngRevReq(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        edit_id = contact_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_unconfirmed_parent_block_confirm_EngRevReq(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        edit_id = contact_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_Contact_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        edit_id = address_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_unconfirmed_parent_block_confirm_Contact_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        edit_id = address_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_Address_Location(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(address_id))
+        edit_id = location_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_unconfirmed_parent_block_confirm_Address_Location(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_response.json()['RecordID']
+        location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(address_id))
+        edit_id = location_response.json()['EditID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    """
+    Test deleting records with Edit
+    """
+
+    def test_edit_delete_AHJ_alone(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+
+        AHJID = ahj_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(AHJ.objects.filter(AHJID=AHJID).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_AHJ_alone(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(AHJ.objects.filter(AHJID=AHJID).exists())
+
+    def test_edit_delete_Address_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_create_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(address_id, 'Address'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_Address_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_create_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(address_id, 'Address'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_Contact_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(Contact.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_Contact_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(Contact.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_EngRevReq_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        eng_rev_req_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        eng_rev_req_id = eng_rev_req_create_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(eng_rev_req_id, 'EngineeringReviewRequirement'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(EngineeringReviewRequirement.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_EngRevReq_from_AHJ(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        eng_rev_req_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        eng_rev_req_id = eng_rev_req_create_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(eng_rev_req_id, 'EngineeringReviewRequirement'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(EngineeringReviewRequirement.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_Address_from_Contact(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        address_id = address_create_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(address_id, 'Address'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(Address.objects.filter(Contact=Contact.objects.get(id=contact_id)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_Address_from_Contact(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        address_id = address_create_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(address_id, 'Address'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(Address.objects.filter(Contact=Contact.objects.get(id=contact_id)).exists())
+
+    def test_edit_delete_Location_from_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_create_response.json()['RecordID']
+        location_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(address_id))
+        location_id = location_create_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(location_id, 'Location'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertFalse(Location.objects.filter(Address=Address.objects.get(id=address_id)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_Location_from_Address(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        address_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        address_id = address_create_response.json()['RecordID']
+        location_create_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(address_id))
+        location_id = location_create_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(location_id, 'Location'))
+
+        self.assertTrue(delete_response.status_code == 200)
+        self.assertTrue(Location.objects.filter(Address=Address.objects.get(id=address_id)).exists())
+
+    def test_edit_delete_AHJ_whole(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        ahj_address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        ahj_address_id = ahj_address_response.json()['RecordID']
+        ahj_address_location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(ahj_address_id))
+        ahj_address_location_id = ahj_address_location_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        contact_address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        contact_address_id = contact_address_response.json()['RecordID']
+        contact_address_location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(contact_address_id))
+        contact_address_location_id = contact_address_location_response.json()['RecordID']
+        eng_rev_req_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        eng_rev_req_id = eng_rev_req_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
+
+        self.assertTrue(delete_response.status_code == 200)
+
+        self.assertFalse(AHJ.objects.filter(AHJID=AHJID).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Address').filter(RecordID=ahj_address_id).exists())
+        self.assertFalse(Address.objects.filter(id=ahj_address_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Location').filter(RecordID=ahj_address_location_id).exists())
+        self.assertFalse(Location.objects.filter(id=ahj_address_location_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Contact').filter(RecordID=contact_id).exists())
+        self.assertFalse(Contact.objects.filter(id=contact_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Address').filter(RecordID=contact_address_id).exists())
+        self.assertFalse(Address.objects.filter(id=contact_address_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Location').filter(RecordID=contact_address_location_id).exists())
+        self.assertFalse(Location.objects.filter(id=contact_address_location_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='EngineeringReviewRequirement').filter(RecordID=eng_rev_req_id).exists())
+        self.assertFalse(EngineeringReviewRequirement.objects.filter(id=eng_rev_req_id).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_AHJ_whole(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+        ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
+        AHJID = ahj_response.json()['RecordID']
+        ahj_address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(AHJID, 'AHJ'))
+        ahj_address_id = ahj_address_response.json()['RecordID']
+        ahj_address_location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(ahj_address_id))
+        ahj_address_location_id = ahj_address_location_response.json()['RecordID']
+        contact_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_CONTACT(AHJID))
+        contact_id = contact_response.json()['RecordID']
+        contact_address_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ADDRESS(contact_id, 'Contact'))
+        contact_address_id = contact_address_response.json()['RecordID']
+        contact_address_location_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_LOCATION(contact_address_id))
+        contact_address_location_id = contact_address_location_response.json()['RecordID']
+        eng_rev_req_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_ENG_REV_REQ(AHJID))
+        eng_rev_req_id = eng_rev_req_response.json()['RecordID']
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(ahj_address_id, 'Address'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(ahj_address_location_id, 'Location'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_address_id, 'Address'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_address_location_id, 'Location'))
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(eng_rev_req_id, 'EngineeringReviewRequirement'))
+
+        self.assertTrue(delete_response.status_code == 200)
+
+        self.assertTrue(AHJ.objects.filter(AHJID=AHJID).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Address').filter(RecordID=ahj_address_id).filter(EditType='delete').exists())
+        self.assertTrue(Address.objects.filter(id=ahj_address_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Location').filter(RecordID=ahj_address_location_id).filter(EditType='delete').exists())
+        self.assertTrue(Location.objects.filter(id=ahj_address_location_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Contact').filter(RecordID=contact_id).filter(EditType='delete').exists())
+        self.assertTrue(Contact.objects.filter(id=contact_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Address').filter(RecordID=contact_address_id).filter(EditType='delete').exists())
+        self.assertTrue(Address.objects.filter(id=contact_address_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Location').filter(RecordID=contact_address_location_id).filter(EditType='delete').exists())
+        self.assertTrue(Location.objects.filter(id=contact_address_location_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='EngineeringReviewRequirement').filter(RecordID=eng_rev_req_id).filter(EditType='delete').exists())
+        self.assertTrue(EngineeringReviewRequirement.objects.filter(id=eng_rev_req_id).exists())
+
+    """
+    Test updating records with Edit
+    """

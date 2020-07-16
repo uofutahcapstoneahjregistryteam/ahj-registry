@@ -142,7 +142,7 @@ def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest
     if record.__class__.__name__ == 'AHJ':
         record_edits = Edit.objects.filter(RecordID=record.AHJID)
     else:
-        record_edits = Edit.objects.filter(RecordID=record.id)
+        record_edits = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__)
 
     if find_create_edit:
         edit = record_edits.filter(EditType='create').first()
@@ -257,22 +257,24 @@ class AHJ(models.Model):
     confirmed_edits_only = False
     highest_vote_ranking = False
 
+    edit_set = None
+
     def get_edit(self, field_name):
         return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
 
     def get_create_edit(self):
         return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
 
-    def chain_delete(self):
+    def chain_delete(self, edit):
         address = Address.objects.filter(AHJ=self).first()
         if address is not None:
-            address.chain_delete()
+            address.chain_delete(edit)
         contacts = Contact.objects.filter(AHJ=self)
         for contact in contacts:
-            contact.chain_delete()
+            contact.chain_delete(edit)
         eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
         for eng_rev_req in eng_rev_reqs:
-            eng_rev_req.chain_delete()
+            eng_rev_req.chain_delete(edit)
         self.delete()
 
 
@@ -304,7 +306,7 @@ class Contact(models.Model):
     def chain_delete(self, edit):
         address = Address.objects.filter(Contact=self).first()
         if address is not None:
-            address.chain_delete()
+            address.chain_delete(edit)
         add_delete_edits(self, edit)
         self.delete()
 
@@ -358,7 +360,7 @@ class Address(models.Model):
     def chain_delete(self, edit):
         location = Location.objects.filter(Address=self).first()
         if location is not None:
-            location.delete()
+            location.chain_delete(edit)
         add_delete_edits(self, edit)
         self.delete()
 
@@ -408,18 +410,24 @@ class Edit(models.Model):
         return self.RecordID # wrong for now, add user ownership next
 
     def create_record(self):
-        record = apps.get_model('core', self.RecordType).objects.create()
         if self.RecordType == 'AHJ':
+            record = apps.get_model('core', self.RecordType).objects.create()
             self.RecordID = record.AHJID
         else:
+            record = apps.get_model('core', self.RecordType).objects.create(**{self.ParentRecordType: self.get_parent()})
             self.RecordID = record.id
         self.save()
+
+    def get_parent(self):
+        if self.ParentRecordType == 'AHJ':
+            return apps.get_model('core', self.ParentRecordType).objects.filter(AHJID=self.ParentID).first()
+        return apps.get_model('core', self.ParentRecordType).objects.filter(id=self.ParentID).first()
 
     def get_record(self):
         if self.RecordType == 'AHJ':
             record = AHJ.objects.filter(AHJID=self.RecordID).first()
         else:
-            record = apps.get_model('core', self.RecordType).objects.filter(pk=self.RecordID).first()
+            record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID).first()
         return record
 
     def get_user_confirm(self):
@@ -428,22 +436,34 @@ class Edit(models.Model):
     def get_user_modify(self):
         return User.objects.filter(pk=self.ModifyingUserID).first()
 
+    def check_record_edit_create_confirmed(self, record):
+        if record.__class__.__name__ == 'AHJ':
+            create_edit = Edit.objects.filter(RecordID=record.AHJID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
+        else:
+            create_edit = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
+        if create_edit is not None and create_edit.IsConfirmed:
+            return True
+        return False
+
     def accept(self, user_id):
+
+        if self.EditType == 'create':
+            if self.RecordType != 'AHJ':
+                parent = self.get_parent()
+                if not self.check_record_edit_create_confirmed(parent):
+                    return
+        elif self.EditType == 'update':
+            record = self.get_record()
+            if record is not None:
+                if self.check_record_edit_create_confirmed(record):
+                    setattr(record, self.FieldName, self.Value)
+                    record.save()
+        elif self.EditType == 'delete':
+            self.get_record().chain_delete(self)
+
         self.IsConfirmed = True
         self.ConfirmingUserID = user_id
         self.ConfirmedDate = timezone.now()
-
-        if self.EditType == 'update':
-            record = self.get_record()
-            if record is not None:
-                create_edit = Edit.objects.filter(RecordID=self.RecordID).filter(EditType='create').first()
-                if create_edit is not None and not create_edit.IsConfirmed:
-                    return
-                setattr(record, self.FieldName, self.Value)
-                record.save()
-        elif self.EditType == 'delete':
-            self.get_record().chain_delete()
-
         self.save()
 
     def reject(self, user_id):
@@ -452,7 +472,7 @@ class Edit(models.Model):
         self.ConfirmedDate = timezone.now()
 
         if self.EditType == 'create':
-            self.get_record().chain_delete()
+            self.get_record().chain_delete(self)
 
         self.save()
 
@@ -460,16 +480,16 @@ class Edit(models.Model):
         try:
             apps.get_model('core', self.RecordType)
             return True
-        except apps.LookupError:
+        except LookupError:
             return False
 
     def validate_ParentRecordType(self):
         try:
             apps.get_model('core', self.RecordType)
             return True
-        except apps.LookupError:
+        except LookupError:
             return False
 
-    def clean_FieldName(self):
+    def validate_FieldName(self):
         record = self.get_record()
         return hasattr(record, self.FieldName)
