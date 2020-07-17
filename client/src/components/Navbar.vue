@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-md navbar-light navbar-custom">
     <router-link to="ahj-search" class="navbar-brand">
-      <img id="sslogo" src="@/assets/sslogo.png" />
+      <img id="oblogo" src="@/assets/ob.png" />
       <h1 class="app-title">AHJ Registry</h1>
     </router-link>
     <ul class="navbar-nav ml-auto">
@@ -88,7 +88,7 @@ nav {
   color: #3b3932;
 }
 
-#sslogo {
+#oblogo {
   margin-top: -8px;
 
   width: auto;
