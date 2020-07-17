@@ -9,4 +9,4 @@ EDIT_CREATE_LOCATION = lambda ParentID: {'RecordType': 'Location', 'ParentID': P
 
 EDIT_DELETE = lambda RecordID, RecordType: {'RecordID': RecordID, 'RecordType': RecordType, 'EditType': 'delete'}
 
-EDIT_UPDATE = lambda RecordID, RecordType: {'RecordID': RecordID, 'RecordType': RecordType, 'EditType': 'update'}
+EDIT_UPDATE = lambda RecordID, RecordType, FieldName, Value: {'RecordID': RecordID, 'RecordType': RecordType, 'EditType': 'update', 'FieldName': FieldName, 'Value': Value}

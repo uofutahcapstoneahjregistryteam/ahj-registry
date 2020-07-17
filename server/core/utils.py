@@ -163,10 +163,10 @@ def create_edit(request):
             if edit.Value == '':
                 return Response({'detail': 'No value was given'})
             if not edit.validate_FieldName():
-                return Response({'detail': 'Record does not have given field name.'})
+                return Response({'detail': 'Cannot submit edit for given field name.'})
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
         elif edit.EditType == 'delete':
-            if not edit.check_record_edit_create_confirmed(edit.get_record()):
+            if not check_record_edit_create_confirmed(edit.get_record()):
                 return Response({'detail': 'Cannot make delete request records awaiting confirmation'})
 
         if request.user.is_superuser or request.user.id == edit.get_record_owner_id():

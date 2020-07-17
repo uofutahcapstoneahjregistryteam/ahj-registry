@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist
 from ahj_gis.models import Polygon
 from django.apps import apps
 import json
@@ -139,11 +139,7 @@ def retrieve_edit(record, field_name, edit):
 
     
 def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest_vote_ranking):
-    if record.__class__.__name__ == 'AHJ':
-        record_edits = Edit.objects.filter(RecordID=record.AHJID)
-    else:
-        record_edits = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__)
-
+    record_edits = get_all_record_edits(record)
     if find_create_edit:
         edit = record_edits.filter(EditType='create').first()
         return retrieve_edit(record, field_name, edit)
@@ -166,6 +162,28 @@ def add_delete_edits(record, edit):
                         ModifyingUserID=edit.ModifyingUserID,
                         ModifiedDate=edit.ModifiedDate, IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID,
                         ConfirmedDate=edit.ConfirmedDate)
+
+
+def get_all_record_edits(record):
+    if record.__class__.__name__ == 'AHJ':
+        return Edit.objects.filter(RecordID=record.AHJID)
+    return Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__)
+
+
+def reject_all_unconfirmed_record_update_edits(record, edit):
+    record_edits = get_all_record_edits(record).filter(IsConfirmed=None).filter(EditType='update')
+    for record_edit in record_edits:
+        record_edit.reject(edit.ConfirmingUserID)
+
+
+def check_record_edit_create_confirmed(record):
+    if record.__class__.__name__ == 'AHJ':
+        create_edit = Edit.objects.filter(RecordID=record.AHJID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
+    else:
+        create_edit = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
+    if create_edit is not None and create_edit.IsConfirmed:
+        return True
+    return False
         
 
 # Create an auth token every time a user is created
@@ -275,6 +293,8 @@ class AHJ(models.Model):
         eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
         for eng_rev_req in eng_rev_reqs:
             eng_rev_req.chain_delete(edit)
+        if not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -307,7 +327,10 @@ class Contact(models.Model):
         address = Address.objects.filter(Contact=self).first()
         if address is not None:
             address.chain_delete(edit)
-        add_delete_edits(self, edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -329,7 +352,10 @@ class EngineeringReviewRequirement(models.Model):
         return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
 
     def chain_delete(self, edit):
-        add_delete_edits(self, edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -361,7 +387,10 @@ class Address(models.Model):
         location = Location.objects.filter(Address=self).first()
         if location is not None:
             location.chain_delete(edit)
-        add_delete_edits(self, edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -386,7 +415,10 @@ class Location(models.Model):
         return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
 
     def chain_delete(self, edit):
-        add_delete_edits(self, edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -398,7 +430,7 @@ class Edit(models.Model):
     EditType = models.CharField(max_length=45)
     FieldName = models.CharField(default='', max_length=45)
     Value = models.TextField(default='')
-    PreviousValue = models.TextField(default='')
+    PreviousValue = models.TextField(null=True, default=None)
     ModifyingUserID = models.IntegerField()
     ModifiedDate = models.DateTimeField(auto_now_add=True)
     IsConfirmed = models.BooleanField(null=True, default=None)
@@ -436,34 +468,24 @@ class Edit(models.Model):
     def get_user_modify(self):
         return User.objects.filter(pk=self.ModifyingUserID).first()
 
-    def check_record_edit_create_confirmed(self, record):
-        if record.__class__.__name__ == 'AHJ':
-            create_edit = Edit.objects.filter(RecordID=record.AHJID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
-        else:
-            create_edit = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
-        if create_edit is not None and create_edit.IsConfirmed:
-            return True
-        return False
-
     def accept(self, user_id):
+        self.IsConfirmed = True
+        self.ConfirmingUserID = user_id
+        self.ConfirmedDate = timezone.now()
 
         if self.EditType == 'create':
             if self.RecordType != 'AHJ':
                 parent = self.get_parent()
-                if not self.check_record_edit_create_confirmed(parent):
+                if not check_record_edit_create_confirmed(parent):
                     return
         elif self.EditType == 'update':
             record = self.get_record()
             if record is not None:
-                if self.check_record_edit_create_confirmed(record):
+                if check_record_edit_create_confirmed(record):
                     setattr(record, self.FieldName, self.Value)
                     record.save()
         elif self.EditType == 'delete':
             self.get_record().chain_delete(self)
-
-        self.IsConfirmed = True
-        self.ConfirmingUserID = user_id
-        self.ConfirmedDate = timezone.now()
         self.save()
 
     def reject(self, user_id):
@@ -491,5 +513,11 @@ class Edit(models.Model):
             return False
 
     def validate_FieldName(self):
-        record = self.get_record()
-        return hasattr(record, self.FieldName)
+        record_meta = apps.get_model('core', self.RecordType)._meta
+        try:
+            field_name = record_meta.get_field(self.FieldName).__class__.__name__
+            if field_name == 'ForeignKey' or field_name == 'OneToOneField':
+                return False
+            return True
+        except FieldDoesNotExist:
+            return False
