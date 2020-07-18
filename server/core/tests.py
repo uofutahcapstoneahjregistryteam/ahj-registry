@@ -100,7 +100,7 @@ class EditTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
         ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
         AHJID = ahj_response.json()['RecordID']
-        edit_id = ahj_response.json()['id']
+        edit_id = ahj_response.json()['EditID']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
 
         self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
@@ -112,7 +112,7 @@ class EditTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
         ahj_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_CREATE_AHJ)
         AHJID = ahj_response.json()['RecordID']
-        edit_id = ahj_response.json()['id']
+        edit_id = ahj_response.json()['EditID']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
 
         self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
@@ -729,6 +729,6 @@ class EditTestCase(APITestCase):
         Value = 1000
 
         update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
-        print(update_response.json())
+
         self.assertTrue(update_response.status_code == 200)
         self.assertTrue(getattr(Location.objects.get(id=RecordID), FieldName) == Value)

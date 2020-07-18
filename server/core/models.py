@@ -448,6 +448,7 @@ class Edit(models.Model):
         else:
             record = apps.get_model('core', self.RecordType).objects.create(**{self.ParentRecordType: self.get_parent()})
             self.RecordID = record.id
+        self.Value = self.RecordID
         self.save()
 
     def get_parent(self):
@@ -516,7 +517,7 @@ class Edit(models.Model):
         record_meta = apps.get_model('core', self.RecordType)._meta
         try:
             field_name = record_meta.get_field(self.FieldName).__class__.__name__
-            if field_name == 'ForeignKey' or field_name == 'OneToOneField':
+            if field_name == 'id' or field_name == 'AHJID' or field_name == 'ForeignKey' or field_name == 'OneToOneField':
                 return False
             return True
         except FieldDoesNotExist:

@@ -44,22 +44,26 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-class EditSerializer(serializers.ModelSerializer):
+class EditSerializer(serializers.Serializer):
     EditID = serializers.IntegerField(source='id', required=False)
     RecordID = serializers.CharField(required=False)
-    ParentID = serializers.CharField(required=False)
-    ParentRecordType = serializers.CharField(required=False)
+    RecordType = serializers.CharField(required=False, write_only=True)
+    EditType = serializers.CharField(required=False, write_only=True)
+    ParentID = serializers.CharField(required=False, write_only=True)
+    ParentRecordType = serializers.CharField(required=False, write_only=True)
     PreviousValue = serializers.CharField(required=False)
-    FieldName = serializers.CharField(required=False)
+    FieldName = serializers.CharField(required=False, write_only=True)
     Value = serializers.CharField(required=False)
     IsConfirmed = serializers.NullBooleanField(required=False)
     ConfirmingUserID = UserSerializer(source='get_user_confirm', required=False)
     ModifyingUserID = UserSerializer(source='get_user_modify', required=False)
     ModifiedDate = serializers.DateTimeField(required=False)
 
-    class Meta:
-        model = Edit
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -126,7 +130,7 @@ class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AHJSerializer(serializers.ModelSerializer):
+class AHJSerializer(serializers.Serializer):
     AHJID = EditSerializerHelper(source='*', required=False)
     AHJName = EditSerializerHelper(source='*', required=False)
     BuildingCode = EditSerializerHelper(source='*', required=False)
@@ -146,11 +150,12 @@ class AHJSerializer(serializers.ModelSerializer):
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
-    confirmed_edits_only = False
 
-    class Meta:
-        model = AHJ
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
 class LocationHistorySerializer(serializers.ModelSerializer):

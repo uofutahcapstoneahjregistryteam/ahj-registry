@@ -32,28 +32,21 @@ export default {
     return {
       fields: [
         {
-          key: "id",
-          label: "Internal ID",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
-        {
-          key: "AHJID",
+          key: "AHJID.Value",
           label: "AHJ ID",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "AHJName",
+          key: "AHJName.Value",
           label: "AHJ Name",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "BuildingCode",
+          key: "BuildingCode.Value",
           label: "Building Code",
           thStyle: { width: "274px" },
           class: "text-center",
@@ -61,14 +54,14 @@ export default {
           thClass: ".col-field-styling"
         },
         {
-          key: "BuildingCodeNotes",
+          key: "BuildingCodeNotes.Value",
           label: "Building Code Notes",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "ElectricCode",
+          key: "ElectricCode.Value",
           label: "Electric Code",
           thStyle: { width: "274px" },
           class: "text-center",
@@ -76,14 +69,14 @@ export default {
           thClass: ".col-field-styling"
         },
         {
-          key: "ElectricCodeNotes",
+          key: "ElectricCodeNotes.Value",
           label: "Electric Code Notes",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "FireCode",
+          key: "FireCode.Value",
           label: "Fire Code",
           thStyle: { width: "274px" },
           class: "text-center",
@@ -91,14 +84,14 @@ export default {
           thClass: ".col-field-styling"
         },
         {
-          key: "FireCodeNotes",
+          key: "FireCodeNotes.Value",
           label: "Fire Code Notes",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "ResidentialCode",
+          key: "ResidentialCode.Value",
           label: "Residential Code",
           thStyle: { width: "274px" },
           class: "text-center",
@@ -106,91 +99,91 @@ export default {
           thClass: ".col-field-styling"
         },
         {
-          key: "ResidentialCodeNotes",
+          key: "ResidentialCodeNotes.Value",
           label: "Residential Code Notes",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.AddrLine1",
+          key: "Address.AddrLine1.Value",
           label: "Address Line 1",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.AddrLine2",
+          key: "Address.AddrLine2.Value",
           label: "Address Line 2",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.AddrLine3",
+          key: "Address.AddrLine3.Value",
           label: "Address Line 3",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.City",
+          key: "Address.City.Value",
           label: "City",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.County",
+          key: "Address.County.Value",
           label: "County",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.Country",
+          key: "Address.Country.Value",
           label: "Country",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.StateProvince",
+          key: "Address.StateProvince.Value",
           label: "State/Province",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.ZipPostalCode",
+          key: "Address.ZipPostalCode.Value",
           label: "ZIP Postal Code",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.Location.Altitude",
+          key: "Address.Location.Altitude.Value",
           label: "Address Location Altitude",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.Location.Elevation",
+          key: "Address.Location.Elevation.Value",
           label: "Address Location Elevation",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.Location.Latitude",
+          key: "Address.Location.Latitude.Value",
           label: "Address Location Latitude",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.Location.Longitude",
+          key: "Address.Location.Longitude.Value",
           label: "Address Location Longitude",
           thStyle: { width: "274px" },
           class: "text-center",
