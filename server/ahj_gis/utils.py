@@ -5,7 +5,7 @@ import csv
 
 
 def get_ahj_set(longitude, latitude):
-    coordinate = Point(float(longitude), float(latitude))
+    coordinate = Point(longitude, latitude)
 
     # Filter by intersects
     intersects_poly_set = Polygon.objects.filter(mpoly__intersects=coordinate)
@@ -25,6 +25,12 @@ def get_ahj_set(longitude, latitude):
         if poly_ahj is not None:
             ahj_set.append(poly_ahj)
     return ahj_set
+
+
+def get_orange_button_value_primitive(field):
+    if isinstance(field, dict) and 'Value' in field:
+        return field['Value']
+    return field
 
 
 def add_abbr_to_state():

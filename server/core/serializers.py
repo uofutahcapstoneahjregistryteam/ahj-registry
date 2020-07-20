@@ -6,7 +6,7 @@ from .models import *
 class EditSerializerHelper(serializers.Field):
 
     def to_representation(self, value):
-        if self.field_name[-2:].lower() == 'id':
+        if value.__class__.__name__ == self.field_name[0:-2] and self.field_name[-2:].lower() == 'id':
             return EditSerializer(value.get_create_edit()).data
         return EditSerializer(value.get_edit(self.field_name)).data
 
@@ -66,7 +66,7 @@ class EditSerializer(serializers.Serializer):
         pass
 
 
-class LocationSerializer(serializers.ModelSerializer):
+class LocationSerializer(serializers.Serializer):
     LocationID = EditSerializerHelper(source='*', required=False)
     Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
     Description = EditSerializerHelper(source='*', required=False)
@@ -76,12 +76,14 @@ class LocationSerializer(serializers.ModelSerializer):
     LocationType = EditSerializerHelper(source='*', required=False)
     Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=9, decimal_places=6)
 
-    class Meta:
-        model = Location
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
-class AddressSerializer(serializers.ModelSerializer):
+class AddressSerializer(serializers.Serializer):
     AddressID = EditSerializerHelper(source='*', required=False)
     AddrLine1 = EditSerializerHelper(source='*', required=False)
     AddrLine2 = EditSerializerHelper(source='*', required=False)
@@ -95,12 +97,14 @@ class AddressSerializer(serializers.ModelSerializer):
     ZipPostalCode = EditSerializerHelper(source='*', required=False)
     Location = LocationSerializer(source='location', many=False, required=False, allow_null=True)
 
-    class Meta:
-        model = Address
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
-class ContactSerializer(serializers.ModelSerializer):
+class ContactSerializer(serializers.Serializer):
     ContactID = EditSerializerHelper(source='*', required=False)
     ContactType = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
@@ -113,21 +117,25 @@ class ContactSerializer(serializers.ModelSerializer):
     WorkPhone = EditSerializerHelper(source='*', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
 
-    class Meta:
-        model = Contact
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
-class EngineeringReviewRequirementSerializer(serializers.ModelSerializer):
+class EngineeringReviewRequirementSerializer(serializers.Serializer):
     EngineeringReviewRequirementID = EditSerializerHelper(source='*', required=False)
     RequirementLevel = EditSerializerHelper(source='*', required=False)
     StampType = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
     EngineeringReviewType = EditSerializerHelper(source='*', required=False)
 
-    class Meta:
-        model = EngineeringReviewRequirement
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
 
 
 class AHJSerializer(serializers.Serializer):
