@@ -138,7 +138,7 @@ def retrieve_edit(record, field_name, edit):
         return edit
 
     
-def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest_vote_ranking):
+def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest_vote_rating):
     record_edits = get_all_record_edits(record)
     if find_create_edit:
         edit = record_edits.filter(EditType='create').first()
@@ -148,8 +148,14 @@ def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest
     if confirmed_edits_only:
         edit = record_edits_field_name.filter(IsConfirmed=True).order_by('-ConfirmedDate').first()
         return retrieve_edit(record, field_name, edit)
-    elif highest_vote_ranking:
-        edit = record_edits_field_name.order_by('-VoteRanking').first()
+    elif highest_vote_rating:
+        edits = record_edits_field_name.order_by('-VoteRating')
+        if len(edits) > 1:
+            highest_vote = edits.first().VoteRating
+            edits = edits.filter(VoteRating=highest_vote)
+            edit = edits.order_by('-ModifiedDate').first()
+        else:
+            edit = edits.first()
         return retrieve_edit(record, field_name, edit)
     else:
         edit = record_edits_field_name.order_by('-ModifiedDate').first()
@@ -273,15 +279,15 @@ class AHJ(models.Model):
     history = HistoricalRecords()
 
     confirmed_edits_only = False
-    highest_vote_ranking = False
+    highest_vote_rating = False
 
     edit_set = None
 
     def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def get_create_edit(self):
-        return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def chain_delete(self, edit):
         address = Address.objects.filter(AHJ=self).first()
@@ -315,13 +321,13 @@ class Contact(models.Model):
     history = HistoricalRecords()
 
     confirmed_edits_only = False
-    highest_vote_ranking = False
+    highest_vote_rating = False
 
     def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def chain_delete(self, edit):
         address = Address.objects.filter(Contact=self).first()
@@ -343,13 +349,13 @@ class EngineeringReviewRequirement(models.Model):
     history = HistoricalRecords()
 
     confirmed_edits_only = False
-    highest_vote_ranking = False
+    highest_vote_rating = False
 
     def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def chain_delete(self, edit):
         if edit.IsConfirmed:
@@ -375,13 +381,13 @@ class Address(models.Model):
     history = HistoricalRecords()
 
     confirmed_edits_only = False
-    highest_vote_ranking = False
+    highest_vote_rating = False
 
     def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def chain_delete(self, edit):
         location = Location.objects.filter(Address=self).first()
@@ -406,13 +412,13 @@ class Location(models.Model):
     history = HistoricalRecords()
 
     confirmed_edits_only = False
-    highest_vote_ranking = False
+    highest_vote_rating = False
 
     def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_ranking=self.highest_vote_ranking)
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
 
     def chain_delete(self, edit):
         if edit.IsConfirmed:
@@ -522,3 +528,16 @@ class Edit(models.Model):
             return True
         except FieldDoesNotExist:
             return False
+
+    def set_vote_rating(self):
+        votes = Vote.objects.filter(Edit=self)
+        upvotes = len(votes.filter(Rating=True))
+        downvotes = len(votes.filter(Rating=False))
+        self.VoteRating = upvotes - downvotes
+        self.save()
+
+
+class Vote(models.Model):
+    Edit = models.ForeignKey(Edit, on_delete=models.DO_NOTHING)
+    VotingUserID = models.IntegerField()
+    Rating = models.BooleanField()

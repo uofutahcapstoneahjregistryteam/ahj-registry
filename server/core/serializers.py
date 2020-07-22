@@ -58,6 +58,7 @@ class EditSerializer(serializers.Serializer):
     ConfirmingUserID = UserSerializer(source='get_user_confirm', required=False)
     ModifyingUserID = UserSerializer(source='get_user_modify', required=False)
     ModifiedDate = serializers.DateTimeField(required=False)
+    VoteRating = serializers.IntegerField(required=False, read_only=True)
 
     def update(self, instance, validated_data):
         pass

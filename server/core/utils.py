@@ -186,7 +186,7 @@ def set_edit(request, pk):
     confirm_status = request.GET.get('confirm', '')
     if confirm_status != '':
         return set_edit_status(confirm_status, user, edit)
-    vote_status = request.Get.get('vote', '')
+    vote_status = request.GET.get('vote', '')
     if vote_status != '':
         return set_edit_vote(vote_status, user, edit)
     return Response(EditSerializer(edit).data)
@@ -206,5 +206,22 @@ def set_edit_status(confirm_status, user, edit):
 
 
 def set_edit_vote(vote_status, user, edit):
-    return Response({'detail': 'voted'})
-
+    if vote_status == 'upvote':
+        rating = True
+    elif vote_status == 'downvote':
+        rating = False
+    elif vote_status == 'none':
+        rating = None
+    else:
+        return Response(EditSerializer(edit).data)
+    vote = Vote.objects.filter(Edit=edit).filter(VotingUserID=user.id).first()
+    if vote is None:
+        Vote.objects.create(Edit=edit, VotingUserID=user.id, Rating=rating)
+    else:
+        if rating is None:
+            vote.delete()
+        elif vote.Rating != rating:
+            vote.Rating = rating
+            vote.save()
+    edit.set_vote_rating()
+    return Response(EditSerializer(edit).data)

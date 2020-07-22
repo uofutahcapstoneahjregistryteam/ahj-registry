@@ -81,11 +81,13 @@ class AHJList(generics.ListAPIView):
     search_fields = ['AHJName', 'address__City', 'address__County', 'address__Country', 'address__StateProvince', 'address__ZipPostalCode']
 
     def list(self, request):
+        AHJ.confirmed_edits_only = False
+        AHJ.highest_vote_rating = False
         view_mode = request.GET.get('view', '')
         if view_mode == 'confirmed':
             AHJ.confirmed_edits_only = True
-        elif view_mode == 'votes':
-            AHJ.highest_vote_ranking = True
+        elif view_mode == 'highest_voted':
+            AHJ.highest_vote_rating = True
         return super().list(self)
 
 
@@ -96,12 +98,21 @@ class AHJDetail(generics.RetrieveAPIView):
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
 
     def get(self, request, *args, **kwargs):
+        AHJ.confirmed_edits_only = False
+        AHJ.highest_vote_rating = False
         view_mode = request.GET.get('view', '')
         if view_mode == 'confirmed':
             AHJ.confirmed_edits_only = True
-        elif view_mode == 'votes':
-            AHJ.highest_vote_ranking = True
+        elif view_mode == 'highest_voted':
+            AHJ.highest_vote_rating = True
         return super().get(self)
+
+
+# class RecordEditsList(generics.RetrieveAPIView):
+#     lookup_field = 'RecordID'
+#     queryset = Edit.objects.filter(lookup_field).filter(IsConfirmed=None)
+#     serializer_class = EditSerializer
+#     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
 
 class ContactDetail(generics.DestroyAPIView):
