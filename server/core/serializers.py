@@ -32,16 +32,23 @@ class OrangeButtonDecimalFieldSerializer(serializers.DecimalField):
         return data['Value']
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            'id',
-            'first_name',
-            'last_name',
-            'is_superuser',
-            'email_address'
-        ]
+class UserSerializer(serializers.Serializer):
+    Email = serializers.CharField(source='email_address')
+    Password = serializers.CharField(source='password', write_only=True)
+    FirstName = serializers.CharField(source='first_name')
+    LastName = serializers.CharField(source='last_name')
+
+    def create(self, validated_data):
+        Email = validated_data.get('email_address', '')
+        Password = validated_data.get('password', '')
+        FirstName = validated_data.get('first_name', '')
+        LastName = validated_data.get('last_name', '')
+        user = User.objects.create_user(email_address=Email, password=Password, first_name=FirstName, last_name=LastName, is_active=False)
+        send_user_confirmation_email(user)
+        return user
+
+    def update(self, instance, validated_data):
+        pass
 
 
 class EditSerializer(serializers.Serializer):

@@ -1,3 +1,4 @@
+from django.utils.http import urlsafe_base64_decode
 from rest_framework.decorators import api_view
 from .serializers import *
 from rest_framework import generics
@@ -10,7 +11,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from .utils import *
 
 import csv, io
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
 
 
@@ -95,7 +96,7 @@ class AHJDetail(generics.RetrieveAPIView):
     lookup_field = 'AHJID'
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer
-    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
     def get(self, request, *args, **kwargs):
         AHJ.confirmed_edits_only = False
@@ -178,3 +179,23 @@ class ObtainAuthTokenUserInfo(ObtainAuthToken):
                     'is_staff': token.user.is_staff,
                     'auth_token': token.key
                 })
+
+
+class CreateUser(generics.CreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
+
+
+@api_view(['GET'])
+def activate(request, uidb64, token):
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+        if user.is_active:
+            user = None
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user is not None and user.email_confirmation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+    return redirect('http://localhost:8080/#/login')

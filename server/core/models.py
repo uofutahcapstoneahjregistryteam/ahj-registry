@@ -11,124 +11,15 @@ import json
 from taggit.managers import TaggableManager
 from simple_history.models import HistoricalRecords
 from django.utils import timezone
+from .constants import *
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils import six
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes, force_text
+from django.core.mail import EmailMessage
 
 import uuid
-# Authentication and Authorization
-
-BUILDING_CODE_CHOICES = [
-    ('2021IBC', '2021 IBC'),
-    ('2018IBC', '2018 IBC'),
-    ('2015IBC', '2015 IBC'),
-    ('2012IBC', '2012 IBC'),
-    ('2009IBC', '2009 IBC'),
-    ('NoSolarRegulations', 'No Solar Regulations')
-]
-
-ELECTRIC_CODE_CHOICES = [
-    ('2020NEC', '2020 NEC'),
-    ('2017NEC', '2017 NEC'),
-    ('2014NEC', '2014 NEC'),
-    ('2011NEC', '2011 NEC'),
-    ('NoSolarRegulations', 'No Solar Regulations')
-]
-
-FIRE_CODE_CHOICES = [
-    ('2021IFC', '2021 IFC'),
-    ('2018IFC', '2018 IFC'),
-    ('2015IFC', '2015 IFC'),
-    ('2012IFC', '2012 IFC'),
-    ('2009IFC', '2009 IFC'),
-    ('NoSolarRegulations', 'No Solar Regulations')
-]
-
-RESIDENTIAL_CODE_CHOICES = [
-    ('2021IRC', '2021 IRC'),
-    ('2018IRC', '2018 IRC'),
-    ('2015IRC', '2015 IRC'),
-    ('2012IRC', '2012 IRC'),
-    ('2009IRC', '2009 IRC'),
-    ('NoSolarRegulations', 'No Solar Regulations')
-]
-
-WIND_CODE_CHOICES = [
-    ('ASCE716', 'ASCE7-16'),
-    ('ASCE710', 'ASCE7-10'),
-    ('ASCE705', 'ASCE7-05'),
-    ('SpecialWindZone', 'Special Wind Zone')
-]
-
-DOCUMENT_SUBMISSION_METHOD_CHOICES = [
-    ('Epermitting', 'Epermitting'),
-    ('Email', 'Email'),
-    ('InPerson', 'In Person'),
-    ('SolarApp', 'SolarAPP')
-]
-
-ADDRESS_TYPE_CHOICES = [
-    ('Mailing', 'Mailing'),
-    ('Billing', 'Billing'),
-    ('Installation', 'Installation'),
-    ('Shipping', 'Shipping')
-]
-
-LOCATION_DETERMINATION_METHOD_CHOICES = [
-    ('GPS', 'GPS'),
-    ('Survey', 'Survey'),
-    ('AerialImage', 'Aerial Image'),
-    ('EngineeringReport', 'Engineering Report'),
-    ('AddressGeocoding', 'Address Geocoding'),
-    ('Unknown', 'Unknown')
-]
-
-LOCATION_TYPE_CHOICES = [
-    ('DeviceSpecific', 'Device Specific'),
-    ('SiteEntrance', 'Site Entrance'),
-    ('GeneralProximity', 'General Proximity'),
-    ('Warehouse', 'Warehouse')
-]
-
-CONTACT_TYPE_CHOICES = [
-    ('Homeowner', 'Homeowner'),
-    ('OffTaker', 'Off Taker'),
-    ('Inspector', 'Inspector'),
-    ('Engineer', 'Engineer'),
-    ('Originator', 'Originator'),
-    ('Installer', 'Installer'),
-    ('Investor', 'Investor'),
-    ('PermittingOfficial', 'Permitting Official'),
-    ('FireMarshal', 'Fire Marshal'),
-    ('ProjectManager', 'Project Manager')
-]
-
-PREFERRED_CONTACT_METHOD_CHOICES = [
-    ('Email', 'Email'),
-    ('WorkPhone', 'Work Phone'),
-    ('CellPhone', 'Cell Phone'),
-    ('HomePhone', 'Home Phone'),
-    ('CellTextMessage', 'Cell Text Message'),
-]
-
-ENGINEERING_REVIEW_TYPE_CHOICES = [
-    ('StructuralEngineer', 'Structural Engineer'),
-    ('ElectricalEngineer', 'Electrical Engineer'),
-    ('PVEngineer', 'PV Engineer'),
-    ('MasterElectrician', 'Master Electrician'),
-    ('FireMarshal', 'Fire Marshal'),
-    ('EnvironmentalEngineer', 'Environmental Engineer')
-]
-
-REQUIREMENT_LEVEL_CHOICES = [
-    ('Required', 'Required'),
-    ('Optional', 'Optional'),
-    ('ConditionallyRequired', 'Conditionally Required')
-]
-
-STAMP_TYPE_CHOICES = [
-    ('Wet', 'Wet'),
-    ('Digital', 'Digital'),
-    ('Notary', 'Notary'),
-    ('None', 'None')
-]
 
 
 def retrieve_edit(record, field_name, edit):
@@ -137,7 +28,7 @@ def retrieve_edit(record, field_name, edit):
     else:
         return edit
 
-    
+
 def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest_vote_rating):
     record_edits = get_all_record_edits(record)
     if find_create_edit:
@@ -190,13 +81,33 @@ def check_record_edit_create_confirmed(record):
     if create_edit is not None and create_edit.IsConfirmed:
         return True
     return False
-        
 
+
+# Authentication and Authorization
 # Create an auth token every time a user is created
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+
+def send_user_confirmation_email(user):
+    subject = 'AHJ Registry - Activate your account'
+    message = render_to_string('acc_active_email.html', {
+        'user': user,
+        'domain': 'localhost:8000',
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': user.email_confirmation_token.make_token(user)
+    })
+    EmailMessage(subject, message, to=[user.email_address]).send()
+
+
+class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):
+    def _make_hash_value(self, user, timestamp):
+        return (
+            six.text_type(user.pk) + six.text_type(timestamp) +
+            six.text_type(user.is_active)
+        )
 
 
 class UserManager(BaseUserManager):
@@ -238,6 +149,7 @@ class User(AbstractBaseUser):
     # entity = models.ForeignKey(Entity, on_delete=models.CASCADE, blank=True, null=True)
 
     objects = UserManager()
+    email_confirmation_token = EmailConfirmationTokenGenerator()
 
     USERNAME_FIELD = 'email_address'
     EMAIL_FIELD = 'email_address'

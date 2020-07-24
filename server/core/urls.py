@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.conf.urls import url
 from . import views
 
 
@@ -17,5 +18,8 @@ urlpatterns = [
     path('history/contact/', views.ContactHistory.as_view(), name="history-contact"),
     path('history/eng-rev-req/', views.EngineeringReviewRequirementHistory.as_view(), name="history-eng-rev-req"),
     path('history/location/', views.LocationHistory.as_view(), name="history-location"),
-    path('login/', views.ObtainAuthTokenUserInfo.as_view(), name='api-token-auth')
+    path('login/', views.ObtainAuthTokenUserInfo.as_view(), name='api-token-auth'),
+    path('register/', views.CreateUser.as_view(), name='register'),
+    url(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+        views.activate, name='activate')
 ]
