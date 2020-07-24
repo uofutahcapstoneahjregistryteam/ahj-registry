@@ -8,6 +8,7 @@
         <input type="password" placeholder="Password" v-model="password"  @keyup.enter="login"/>
         <br />
         <a href="#" class="btn btn-primary" @click="login">Login</a>
+        <a href="#/register" class="btn btn-outline-primary">Sign Up</a>
       </div>
       <div class="card-footer text-muted">Forgot Password?</div>
     </div>
@@ -62,6 +63,6 @@ export default {
 
 #login-card {
   grid-column: 2 / 3;
-  max-height: 400px;
+  height:   400px;
 }
 </style>

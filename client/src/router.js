@@ -6,6 +6,7 @@ import AHJSearchPage from "./views/AHJSearchPage.vue";
 import AHJHistoryPage from "./views/AHJHistoryPage.vue";
 import EditPage from "./views/EditPage.vue"
 import Login from "./views/Login";
+import SignUp from "./views/SignUp";
 
 Vue.use(Router);
 
@@ -22,6 +23,12 @@ export default new Router({
       name: "login",
       component: Login
     },
+    {
+      path: "/register",
+      name: "register",
+      component: SignUp
+    },
+    { path: "/activate/([0-9A-Za-z_\-]+/[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})", redirect: "/login" },
     // {
     //   path: "/about",
     //   name: "about",
