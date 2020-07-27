@@ -81,15 +81,15 @@ class AHJList(generics.ListAPIView):
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['AHJName', 'address__City', 'address__County', 'address__Country', 'address__StateProvince', 'address__ZipPostalCode']
 
-    def list(self, request):
-        AHJ.confirmed_edits_only = False
-        AHJ.highest_vote_rating = False
-        view_mode = request.GET.get('view', '')
+    def get_serializer_context(self):
+        confirmed = False
+        highest_voted = False
+        view_mode = self.request.GET.get('view', '')
         if view_mode == 'confirmed':
-            AHJ.confirmed_edits_only = True
+            confirmed = True
         elif view_mode == 'highest_voted':
-            AHJ.highest_vote_rating = True
-        return super().list(self)
+            highest_voted = True
+        return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted}
 
 
 class AHJDetail(generics.RetrieveAPIView):
@@ -98,15 +98,15 @@ class AHJDetail(generics.RetrieveAPIView):
     serializer_class = AHJSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
-    def get(self, request, *args, **kwargs):
-        AHJ.confirmed_edits_only = False
-        AHJ.highest_vote_rating = False
-        view_mode = request.GET.get('view', '')
+    def get_serializer_context(self):
+        confirmed = False
+        highest_voted = False
+        view_mode = self.request.GET.get('view', '')
         if view_mode == 'confirmed':
-            AHJ.confirmed_edits_only = True
+            confirmed = True
         elif view_mode == 'highest_voted':
-            AHJ.highest_vote_rating = True
-        return super().get(self)
+            highest_voted = True
+        return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted}
 
 
 # class RecordEditsList(generics.RetrieveAPIView):
@@ -116,19 +116,19 @@ class AHJDetail(generics.RetrieveAPIView):
 #     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
 
-class ContactDetail(generics.DestroyAPIView):
+class ContactDetail(generics.RetrieveAPIView):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
 
 
-class EngineeringReviewRequirementDetail(generics.DestroyAPIView):
+class EngineeringReviewRequirementDetail(generics.RetrieveAPIView):
     queryset = EngineeringReviewRequirement.objects.all()
     serializer_class = EngineeringReviewRequirementSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
 
 
-class AHJHistory(generics.ListCreateAPIView):
+class AHJHistory(generics.ListAPIView):
     lookup_field = 'AHJID'
     queryset = AHJ.history.all()
     serializer_class = AHJHistorySerializer
@@ -137,7 +137,7 @@ class AHJHistory(generics.ListCreateAPIView):
     search_fields = ['AHJID', 'AHJName']
 
 
-class AddressHistory(generics.ListCreateAPIView):
+class AddressHistory(generics.ListAPIView):
     queryset = Address.history.all()
     serializer_class = AddressHistorySerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
@@ -145,7 +145,7 @@ class AddressHistory(generics.ListCreateAPIView):
     search_fields = ['AHJ__AHJID', 'AHJ__AHJName', 'Contact__FirstName', 'Contact__MiddleName', 'Contact__LastName', 'Contact__id']
 
 
-class ContactHistory(generics.ListCreateAPIView):
+class ContactHistory(generics.ListAPIView):
     queryset = Contact.history.all()
     serializer_class = ContactHistorySerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
@@ -153,7 +153,7 @@ class ContactHistory(generics.ListCreateAPIView):
     search_fields = ['AHJ__AHJID', 'FirstName', 'LastName', 'id']
 
 
-class EngineeringReviewRequirementHistory(generics.ListCreateAPIView):
+class EngineeringReviewRequirementHistory(generics.ListAPIView):
     queryset = EngineeringReviewRequirement.history.all()
     serializer_class = EngineeringReviewRequirementHistorySerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
@@ -161,7 +161,7 @@ class EngineeringReviewRequirementHistory(generics.ListCreateAPIView):
     search_fields = ['AHJ__AHJID', 'EngineeringReviewType', 'RequirementLevel', 'StampType', 'id']
 
 
-class LocationHistory(generics.ListCreateAPIView):
+class LocationHistory(generics.ListAPIView):
     queryset = Location.history.all()
     serializer_class = LocationHistorySerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)

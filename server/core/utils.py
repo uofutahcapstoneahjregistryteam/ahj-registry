@@ -169,7 +169,7 @@ def create_edit(request):
             if not check_record_edit_create_confirmed(edit.get_record()):
                 return Response({'detail': 'Cannot make delete request records awaiting confirmation'})
 
-        if request.user.is_superuser or request.user.id == edit.get_record_owner_id():
+        if request.user.is_superuser or edit.is_record_owner(request.user.id):
             edit.accept(request.user.id)
             return Response(EditSerializer(edit).data)
         else:
@@ -195,7 +195,7 @@ def set_edit(request, pk):
 def set_edit_status(confirm_status, user, edit):
     if edit.IsConfirmed is not None:
         return Response({'detail': 'Edit has already been processed. Please submit another edit.'})
-    if user.is_superuser or user.id == edit.get_record_owner_id():
+    if user.is_superuser or edit.is_record_owner(user.id):
         if confirm_status == 'accepted':
             edit.accept(user_id=user.id)
         elif confirm_status == 'rejected':

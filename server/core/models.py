@@ -83,6 +83,176 @@ def check_record_edit_create_confirmed(record):
     return False
 
 
+class AHJ(models.Model):
+    mpoly = models.ForeignKey(Polygon, null=True, on_delete=models.DO_NOTHING)
+    AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    AHJName = models.CharField(blank=True, max_length=100)
+    BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
+    BuildingCodeNotes = models.CharField(blank=True, max_length=255)
+    Description = models.TextField(blank=True)
+    DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
+    DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
+    ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
+    ElectricCodeNotes = models.CharField(blank=True, max_length=255)
+    FileFolderURL = models.CharField(blank=True, max_length=255)
+    FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
+    FireCodeNotes = models.CharField(blank=True, max_length=255)
+    ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)
+    ResidentialCodeNotes = models.CharField(blank=True, max_length=255)
+    WindCode = models.CharField(choices=WIND_CODE_CHOICES, blank=True, default='', max_length=45)
+    WindCodeNotes = models.CharField(blank=True, max_length=255)
+    history = HistoricalRecords()
+
+    edit_set = None
+
+    def get_ahj(self):
+        return self
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        address = Address.objects.filter(AHJ=self).first()
+        if address is not None:
+            address.chain_delete(edit)
+        contacts = Contact.objects.filter(AHJ=self)
+        for contact in contacts:
+            contact.chain_delete(edit)
+        eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
+        for eng_rev_req in eng_rev_reqs:
+            eng_rev_req.chain_delete(edit)
+        if not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class Contact(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    ContactTimezone = models.CharField(blank=True, max_length=100)
+    ContactType = models.CharField(choices=CONTACT_TYPE_CHOICES, blank=True, default='', max_length=45)
+    Description = models.TextField(blank=True)
+    Email = models.CharField(blank=True, max_length=100)
+    FirstName = models.CharField(blank=True, max_length=100)
+    HomePhone = models.CharField(blank=True, max_length=31)
+    LastName = models.CharField(blank=True, max_length=100)
+    MiddleName = models.CharField(blank=True, max_length=100)
+    MobilePhone = models.CharField(blank=True, max_length=31)
+    PreferredContactMethod = models.CharField(choices=PREFERRED_CONTACT_METHOD_CHOICES, blank=True, default='', max_length=45)
+    Title = models.CharField(blank=True, max_length=100)
+    WorkPhone = models.CharField(blank=True, max_length=31)
+    history = HistoricalRecords()
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        address = Address.objects.filter(Contact=self).first()
+        if address is not None:
+            address.chain_delete(edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class EngineeringReviewRequirement(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    Description = models.TextField(blank=True)
+    EngineeringReviewType = models.CharField(choices=ENGINEERING_REVIEW_TYPE_CHOICES, blank=True, default='', max_length=45)
+    RequirementLevel = models.CharField(choices=REQUIREMENT_LEVEL_CHOICES, blank=True, default='', max_length=45)
+    StampType = models.CharField(choices=STAMP_TYPE_CHOICES, max_length=45)
+    history = HistoricalRecords()
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class Address(models.Model):
+    AHJ = models.OneToOneField(AHJ, to_field='AHJID', null=True, blank=True, on_delete=models.CASCADE)
+    Contact = models.OneToOneField(Contact, null=True, blank=True, on_delete=models.CASCADE)
+    AddrLine1 = models.CharField(blank=True, max_length=100)
+    AddrLine2 = models.CharField(blank=True, max_length=100)
+    AddrLine3 = models.CharField(blank=True, max_length=100)
+    AddressType = models.CharField(choices=ADDRESS_TYPE_CHOICES, blank=True, default='', max_length=45)
+    City = models.CharField(blank=True, max_length=100)
+    Country = models.CharField(blank=True, max_length=100)
+    County = models.CharField(blank=True, max_length=100)
+    Description = models.TextField(blank=True)
+    StateProvince = models.CharField(blank=True, max_length=100)
+    ZipPostalCode = models.CharField(blank=True, max_length=10)
+    history = HistoricalRecords()
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        location = Location.objects.filter(Address=self).first()
+        if location is not None:
+            location.chain_delete(edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class Location(models.Model):
+    Address = models.OneToOneField(Address, on_delete=models.CASCADE)
+    Altitude = models.DecimalField(null=True, max_digits=15, decimal_places=6)
+    Description = models.TextField(blank=True)
+    Elevation = models.DecimalField(null=True, max_digits=15, decimal_places=6)
+    Latitude = models.DecimalField(null=True, max_digits=8, decimal_places=6)
+    LocationDeterminationMethod = models.CharField(choices=LOCATION_DETERMINATION_METHOD_CHOICES, blank=True, default='', max_length=45)
+    LocationType = models.CharField(choices=LOCATION_TYPE_CHOICES, blank=True, default='', max_length=45)
+    Longitude = models.DecimalField(null=True, max_digits=9, decimal_places=6)
+    history = HistoricalRecords()
+
+    def get_ahj(self):
+        return self.Address.get_ahj()
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
 # Authentication and Authorization
 # Create an auth token every time a user is created
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -144,6 +314,7 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    AHJ = models.ManyToManyField(AHJ)
 
     # FK one to many
     # entity = models.ForeignKey(Entity, on_delete=models.CASCADE, blank=True, null=True)
@@ -170,176 +341,6 @@ class User(AbstractBaseUser):
     tags = TaggableManager()
 
 
-class AHJ(models.Model):
-    mpoly = models.ForeignKey(Polygon, null=True, on_delete=models.DO_NOTHING)
-    AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    AHJName = models.CharField(blank=True, max_length=100)
-    BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
-    BuildingCodeNotes = models.CharField(blank=True, max_length=255)
-    Description = models.TextField(blank=True)
-    DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
-    DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
-    ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
-    ElectricCodeNotes = models.CharField(blank=True, max_length=255)
-    FileFolderURL = models.CharField(blank=True, max_length=255)
-    FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
-    FireCodeNotes = models.CharField(blank=True, max_length=255)
-    ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)
-    ResidentialCodeNotes = models.CharField(blank=True, max_length=255)
-    WindCode = models.CharField(choices=WIND_CODE_CHOICES, blank=True, default='', max_length=45)
-    WindCodeNotes = models.CharField(blank=True, max_length=255)
-    history = HistoricalRecords()
-
-    confirmed_edits_only = False
-    highest_vote_rating = False
-
-    edit_set = None
-
-    def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def get_create_edit(self):
-        return get_edit(record=self, field_name='AHJID', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def chain_delete(self, edit):
-        address = Address.objects.filter(AHJ=self).first()
-        if address is not None:
-            address.chain_delete(edit)
-        contacts = Contact.objects.filter(AHJ=self)
-        for contact in contacts:
-            contact.chain_delete(edit)
-        eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
-        for eng_rev_req in eng_rev_reqs:
-            eng_rev_req.chain_delete(edit)
-        if not edit.IsConfirmed:
-            reject_all_unconfirmed_record_update_edits(self, edit)
-        self.delete()
-
-
-class Contact(models.Model):
-    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
-    ContactTimezone = models.CharField(blank=True, max_length=100)
-    ContactType = models.CharField(choices=CONTACT_TYPE_CHOICES, blank=True, default='', max_length=45)
-    Description = models.TextField(blank=True)
-    Email = models.CharField(blank=True, max_length=100)
-    FirstName = models.CharField(blank=True, max_length=100)
-    HomePhone = models.CharField(blank=True, max_length=31)
-    LastName = models.CharField(blank=True, max_length=100)
-    MiddleName = models.CharField(blank=True, max_length=100)
-    MobilePhone = models.CharField(blank=True, max_length=31)
-    PreferredContactMethod = models.CharField(choices=PREFERRED_CONTACT_METHOD_CHOICES, blank=True, default='', max_length=45)
-    Title = models.CharField(blank=True, max_length=100)
-    WorkPhone = models.CharField(blank=True, max_length=31)
-    history = HistoricalRecords()
-
-    confirmed_edits_only = False
-    highest_vote_rating = False
-
-    def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def chain_delete(self, edit):
-        address = Address.objects.filter(Contact=self).first()
-        if address is not None:
-            address.chain_delete(edit)
-        if edit.IsConfirmed:
-            add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
-            reject_all_unconfirmed_record_update_edits(self, edit)
-        self.delete()
-
-
-class EngineeringReviewRequirement(models.Model):
-    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
-    Description = models.TextField(blank=True)
-    EngineeringReviewType = models.CharField(choices=ENGINEERING_REVIEW_TYPE_CHOICES, blank=True, default='', max_length=45)
-    RequirementLevel = models.CharField(choices=REQUIREMENT_LEVEL_CHOICES, blank=True, default='', max_length=45)
-    StampType = models.CharField(choices=STAMP_TYPE_CHOICES, max_length=45)
-    history = HistoricalRecords()
-
-    confirmed_edits_only = False
-    highest_vote_rating = False
-
-    def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def chain_delete(self, edit):
-        if edit.IsConfirmed:
-            add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
-            reject_all_unconfirmed_record_update_edits(self, edit)
-        self.delete()
-
-
-class Address(models.Model):
-    AHJ = models.OneToOneField(AHJ, to_field='AHJID', null=True, blank=True, on_delete=models.CASCADE)
-    Contact = models.OneToOneField(Contact, null=True, blank=True, on_delete=models.CASCADE)
-    AddrLine1 = models.CharField(blank=True, max_length=100)
-    AddrLine2 = models.CharField(blank=True, max_length=100)
-    AddrLine3 = models.CharField(blank=True, max_length=100)
-    AddressType = models.CharField(choices=ADDRESS_TYPE_CHOICES, blank=True, default='', max_length=45)
-    City = models.CharField(blank=True, max_length=100)
-    Country = models.CharField(blank=True, max_length=100)
-    County = models.CharField(blank=True, max_length=100)
-    Description = models.TextField(blank=True)
-    StateProvince = models.CharField(blank=True, max_length=100)
-    ZipPostalCode = models.CharField(blank=True, max_length=10)
-    history = HistoricalRecords()
-
-    confirmed_edits_only = False
-    highest_vote_rating = False
-
-    def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def chain_delete(self, edit):
-        location = Location.objects.filter(Address=self).first()
-        if location is not None:
-            location.chain_delete(edit)
-        if edit.IsConfirmed:
-            add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
-            reject_all_unconfirmed_record_update_edits(self, edit)
-        self.delete()
-
-
-class Location(models.Model):
-    Address = models.OneToOneField(Address, on_delete=models.CASCADE)
-    Altitude = models.DecimalField(null=True, max_digits=15, decimal_places=6)
-    Description = models.TextField(blank=True)
-    Elevation = models.DecimalField(null=True, max_digits=15, decimal_places=6)
-    Latitude = models.DecimalField(null=True, max_digits=8, decimal_places=6)
-    LocationDeterminationMethod = models.CharField(choices=LOCATION_DETERMINATION_METHOD_CHOICES, blank=True, default='', max_length=45)
-    LocationType = models.CharField(choices=LOCATION_TYPE_CHOICES, blank=True, default='', max_length=45)
-    Longitude = models.DecimalField(null=True, max_digits=9, decimal_places=6)
-    history = HistoricalRecords()
-
-    confirmed_edits_only = False
-    highest_vote_rating = False
-
-    def get_edit(self, field_name):
-        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def get_create_edit(self):
-        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=self.confirmed_edits_only, highest_vote_rating=self.highest_vote_rating)
-
-    def chain_delete(self, edit):
-        if edit.IsConfirmed:
-            add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
-            reject_all_unconfirmed_record_update_edits(self, edit)
-        self.delete()
-
-
 class Edit(models.Model):
     RecordID = models.CharField(max_length=45)
     RecordType = models.CharField(max_length=45)
@@ -356,8 +357,15 @@ class Edit(models.Model):
     ConfirmedDate = models.DateTimeField(null=True, default=None)
     VoteRating = models.IntegerField(default=0)
 
-    def get_record_owner_id(self):
-        return self.RecordID # wrong for now, add user ownership next
+    def get_record_owners(self):
+        return User.objects.filter(AHJ=self.get_record().get_ahj())
+
+    def is_record_owner(self, user_id):
+        owners = self.get_record_owners()
+        for owner in owners:
+            if user_id == owner.id:
+                return True
+        return False
 
     def create_record(self):
         if self.RecordType == 'AHJ':
@@ -381,6 +389,13 @@ class Edit(models.Model):
             record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID).first()
         return record
 
+    def get_record_query_set(self):
+        if self.RecordType == 'AHJ':
+            record = AHJ.objects.filter(AHJID=self.RecordID)
+        else:
+            record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID)
+        return record
+
     def get_user_confirm(self):
         return User.objects.filter(pk=self.ConfirmingUserID).first()
 
@@ -398,11 +413,12 @@ class Edit(models.Model):
                 if not check_record_edit_create_confirmed(parent):
                     return
         elif self.EditType == 'update':
-            record = self.get_record()
-            if record is not None:
-                if check_record_edit_create_confirmed(record):
-                    setattr(record, self.FieldName, self.Value)
-                    record.save()
+            record_query_set = self.get_record_query_set()
+            if record_query_set.exists():
+                if not check_record_edit_create_confirmed(record_query_set.first()):
+                    return
+                field_update = {self.FieldName: self.Value}
+                record_query_set.update(**field_update)
         elif self.EditType == 'delete':
             self.get_record().chain_delete(self)
         self.save()
@@ -453,3 +469,6 @@ class Vote(models.Model):
     Edit = models.ForeignKey(Edit, on_delete=models.DO_NOTHING)
     VotingUserID = models.IntegerField()
     Rating = models.BooleanField()
+
+    def get_user(self):
+        return User.objects.filter(pk=self.VotingUserID).first()

@@ -4,11 +4,10 @@ from .models import *
 
 
 class EditSerializerHelper(serializers.Field):
-
     def to_representation(self, value):
         if value.__class__.__name__ == self.field_name[0:-2] and self.field_name[-2:].lower() == 'id':
-            return EditSerializer(value.get_create_edit()).data
-        return EditSerializer(value.get_edit(self.field_name)).data
+            return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating'])).data
+        return EditSerializer(value.get_edit(self.field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating'])).data
 
     def to_internal_value(self, data):
         pass
@@ -37,6 +36,7 @@ class UserSerializer(serializers.Serializer):
     Password = serializers.CharField(source='password', write_only=True)
     FirstName = serializers.CharField(source='first_name')
     LastName = serializers.CharField(source='last_name')
+    AHJ = serializers.UUIDField(source='AHJ__AHJID', read_only=True)
 
     def create(self, validated_data):
         Email = validated_data.get('email_address', '')

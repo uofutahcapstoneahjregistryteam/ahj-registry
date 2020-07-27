@@ -4,7 +4,7 @@ from .models import *
 
 class PolygonAdmin(admin.OSMGeoAdmin):
 
-    search_fields = ('NAMELSAD', 'STATEABBR')
+    search_fields = ('NAMELSAD', 'STATEABBR', 'GEOID')
 
 
 # Register your models here.
