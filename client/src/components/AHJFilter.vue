@@ -19,6 +19,14 @@
         <input v-model="query_data.Country" placeholder="Country" @keyup.enter="updateQuery">
         <input v-model="query_data.ZipPostalCode" placeholder="ZipPostalCode" @keyup.enter="updateQuery">
       </div>
+      <h1>View Mode</h1>
+      <div class="form-group">
+        <select v-model="query_data.view">
+          <option value="latest">Latest</option>
+          <option value="highest_voted">Highest Voted</option>
+          <option value="confirmed">Confirmed</option>
+        </select>
+      </div>
       <h1>Building Codes</h1>
       <div class="form-group">
         <select v-model="query_data.BuildingCode" multiple>
@@ -73,6 +81,7 @@ export default {
   data() {
     return {
       query_data: {
+        view: "latest",
         AHJID: "",
         City: "",
         County: "",
@@ -94,7 +103,11 @@ export default {
       Object.keys(this.query_data).forEach(key => {
         if (this.query_data[key].length != 0) {
           if (selectFilterString == "?") {
-            selectFilterString += key + "__in=";
+            if(key === "view") {
+              selectFilterString += key + "=";
+            } else {
+              selectFilterString += key + "__in=";
+            }
           } else {
             selectFilterString += "&" + key + "__in=";
           }
