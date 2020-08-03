@@ -10,6 +10,7 @@ urlpatterns = [
     path('ahj_csv/', views.ahj_upload, name="upload"),
     path('geo/', include('ahj_gis.urls')),
     path('ahj/<uuid:AHJID>/', views.AHJDetail.as_view(), name="ahj"),
+    path('ahj/add_owner/', views.add_owner_to_ahj, name="ahj"),
     path('contact/<str:pk>/', views.ContactDetail.as_view(), name="ahj"),
     path('eng-rev-req/<str:pk>/', views.EngineeringReviewRequirementDetail.as_view(), name="ahj"),
     path('history/ahj/', views.AHJHistory.as_view(), name="history"),

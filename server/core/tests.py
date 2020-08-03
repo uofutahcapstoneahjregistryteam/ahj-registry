@@ -12,11 +12,15 @@ from .serializers import *
 class EditTestCase(APITestCase):
     def setUp(self):
         self.superuser = User.objects.create(email_address='super', password='super', is_superuser=True, is_active=True)
+        self.owner = User.objects.create(email_address='owner', password='owner', is_active=True)
         self.user = User.objects.create(email_address='user', password='user', is_active=True)
-        self.voter = User.objects.create(email_address='voter', password='user', is_active=True)
+        self.voter = User.objects.create(email_address='voter', password='voter', is_active=True)
 
     def become_super(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
+
+    def become_owner(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='owner').key)
 
     def become_user(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
@@ -44,7 +48,25 @@ class EditTestCase(APITestCase):
 
     def create_record_as_user(self, record_type, **kwargs):
         self.become_user()
-        
+
+        if record_type == 'AHJ':
+            edit_create = EDIT_CREATE_AHJ
+        elif record_type == 'Contact':
+            edit_create = EDIT_CREATE_CONTACT(kwargs.get('parent_id', None))
+        elif record_type == 'Address':
+            edit_create = EDIT_CREATE_ADDRESS(kwargs.get('parent_id', None), kwargs.get('parent_type', None))
+        elif record_type == 'Location':
+            edit_create = EDIT_CREATE_LOCATION(kwargs.get('parent_id', None))
+        elif record_type == 'EngineeringReviewRequirement':
+            edit_create = EDIT_CREATE_ENG_REV_REQ(kwargs.get('parent_id', None))
+        else:
+            raise ValueError('TESTING_INVALID_RECORD_TYPE')
+
+        return self.client.post(EDIT_SUBMIT_ENDPOINT, edit_create)
+
+    def create_record_as_owner(self, record_type, **kwargs):
+        self.become_owner()
+
         if record_type == 'AHJ':
             edit_create = EDIT_CREATE_AHJ
         elif record_type == 'Contact':
@@ -422,6 +444,218 @@ class EditTestCase(APITestCase):
         self.assertFalse(Edit.objects.filter(RecordType='EngineeringReviewRequirement').get(RecordID=eng_rev_req_id).IsConfirmed)
         self.assertFalse(EngineeringReviewRequirement.objects.filter(id=eng_rev_req_id).exists())
 
+    def test_edit_create_owner_confirm_Address(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_Address(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Address.objects.filter(id=address_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_Address(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_confirm_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_id = contact_response.json()['RecordID']
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Contact.objects.filter(id=contact_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_Contact(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_confirm_EngRevReq(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        eng_rev_req_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
+        edit_id = eng_rev_req_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_EngRevReq(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        eng_rev_req_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
+        eng_rev_req_id = eng_rev_req_response.json()['RecordID']
+        edit_id = eng_rev_req_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(EngineeringReviewRequirement.objects.filter(id=eng_rev_req_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_EngRevReq(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_confirm_Contact_Address(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_id = contact_response.json()['RecordID']
+        address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_Contact_Address(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_id = contact_response.json()['RecordID']
+        address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
+        address_id = address_response.json()['RecordID']
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Address.objects.filter(id=address_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_Contact_Address(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_id = contact_response.json()['RecordID']
+        address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
+        edit_id = address_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_confirm_Address_Location(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        location_response = self.create_record_as_user('Location', parent_id=address_id)
+        edit_id = location_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_Address_Location(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        location_response = self.create_record_as_user('Location', parent_id=address_id)
+        location_id = location_response.json()['RecordID']
+        edit_id = location_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Location.objects.filter(id=location_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_Address_Location(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        location_response = self.create_record_as_user('Location', parent_id=address_id)
+        edit_id = location_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_create_Address(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(ADD_AHJ_OWNER(self.owner.id, AHJID))
+        address_response = self.create_record_as_owner('Address', parent_id=AHJID, parent_type='AHJ')
+        edit_id = address_response.json()['EditID']
+
+        self.assertTrue(Address.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
     """
     Test deleting records with Edit
     """
@@ -769,6 +1003,33 @@ class EditTestCase(APITestCase):
 
         self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
         self.assertNotEqual(getattr(Location.objects.get(pk=RecordID), FieldName), Value)
+
+    def test_edit_update_same_value_blocked(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        RecordID = ahj_response.json()['RecordID']
+        RecordType = 'AHJ'
+        FieldName = 'AHJName'
+        Value = 'name'
+
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
+
+    def test_edit_update_already_existing_unconfirmed_same_value_blocked(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        RecordID = ahj_response.json()['RecordID']
+        RecordType = 'AHJ'
+        FieldName = 'AHJName'
+        Value = 'name'
+
+        self.become_user()
+        self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.become_super()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
 
     """
     Test voting on edits

@@ -207,6 +207,8 @@ def process_edit_creation(edit_data, user):
                 return 'No value was given', status.HTTP_400_BAD_REQUEST
             if not edit.validate_Value():
                 return 'Invalid value given.', status.HTTP_400_BAD_REQUEST
+            if Edit.objects.filter(RecordID=edit.RecordID).filter(FieldName=edit.FieldName).filter(IsConfirmed=None).filter(Value=edit.Value).exists():
+                return 'An unconfirmed edit with this value already exists.', status.HTTP_400_BAD_REQUEST
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
             if edit.Value == edit.PreviousValue:
                 return 'This edit has the same value as the record', status.HTTP_400_BAD_REQUEST

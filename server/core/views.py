@@ -73,6 +73,28 @@ def edit_detail(request, pk):
     return set_edit(request, pk)
 
 
+@api_view(['GET'])
+def add_owner_to_ahj(request):
+    if request.auth is None:
+        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+    if not request.user.is_superuser:
+        return Response('Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
+    user_id = request.GET.get('user')
+    if user_id is None:
+        return Response('No user specified', status=status.HTTP_400_BAD_REQUEST)
+    user = User.objects.filter(pk=user_id).first()
+    if user is None:
+        return Response('User not found', status=status.HTTP_404_NOT_FOUND)
+    AHJID = request.GET.get('AHJID')
+    if AHJID is None:
+        return Response('AHJID is required', status=status.HTTP_400_BAD_REQUEST)
+    ahj = AHJ.objects.filter(AHJID=AHJID).first()
+    if ahj is None:
+        return Response('AHJ not found', status=status.HTTP_404_NOT_FOUND)
+    user.AHJ.add(ahj)
+    return Response('success', status=status.HTTP_200_OK)
+
+
 class AHJList(generics.ListAPIView):
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer

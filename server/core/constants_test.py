@@ -1,3 +1,5 @@
+ADD_AHJ_OWNER = lambda user_id, AHJID: '/api/v1/ahj/add_owner/?user=%(user_id)i&AHJID=%(AHJID)s' % {'user_id': user_id, 'AHJID': AHJID}
+
 EDIT_SUBMIT_ENDPOINT = '/api/v1/edit/submit/'
 EDIT_DETAIL_ENDPOINT_CONFIRM = lambda pk, status: '/api/v1/edit/%i/?confirm=%s' % (pk, status)
 EDIT_DETAIL_ENDPOINT_VOTE = lambda pk, rating: '/api/v1/edit/%i/?vote=%s' % (pk, rating)
