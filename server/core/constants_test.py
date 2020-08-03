@@ -1,5 +1,6 @@
 EDIT_SUBMIT_ENDPOINT = '/api/v1/edit/submit/'
 EDIT_DETAIL_ENDPOINT_CONFIRM = lambda pk, status: '/api/v1/edit/%i/?confirm=%s' % (pk, status)
+EDIT_DETAIL_ENDPOINT_VOTE = lambda pk, rating: '/api/v1/edit/%i/?vote=%s' % (pk, rating)
 
 EDIT_CREATE_AHJ = {'RecordType': 'AHJ', 'EditType': 'create'}
 EDIT_CREATE_ADDRESS = lambda ParentID, ParentRecordType: {'RecordType': 'Address', 'ParentID': ParentID, 'ParentRecordType': ParentRecordType, 'EditType': 'create'}
