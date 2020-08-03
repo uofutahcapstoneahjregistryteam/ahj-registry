@@ -24,7 +24,9 @@ import uuid
 
 def retrieve_edit(record, field_name, edit):
     if edit is None:
-        return Edit(Value=getattr(record, field_name), FieldName=field_name)
+        if record.__class__.__name__ == 'AHJID':
+            return Edit(RecordID=record.AHJID, Value=getattr(record, field_name), FieldName=field_name)
+        return Edit(RecordID=record.id, Value=getattr(record, field_name), FieldName=field_name)
     else:
         return edit
 
@@ -206,6 +208,8 @@ class Address(models.Model):
     history = HistoricalRecords()
 
     def get_ahj(self):
+        if self.AHJ is None:
+            return self.Contact.get_ahj()
         return self.AHJ
 
     def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
@@ -369,7 +373,7 @@ class Edit(models.Model):
 
     def create_record(self):
         if self.RecordType == 'AHJ':
-            record = apps.get_model('core', self.RecordType).objects.create()
+            record = AHJ.objects.create()
             self.RecordID = record.AHJID
         else:
             record = apps.get_model('core', self.RecordType).objects.create(**{self.ParentRecordType: self.get_parent()})

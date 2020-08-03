@@ -1,6 +1,7 @@
 from core.models import *
 from simple_history.models import HistoricalRecords
 from django.utils import timezone
+from rest_framework import status
 from rest_framework.response import Response
 from core.serializers import *
 from rest_framework.parsers import JSONParser
@@ -112,6 +113,20 @@ def export_city_polygon_geoid_csv():
             print('Written City %i' % count)
             count += 1
 
+def export_ahj_polygon_geoid_csv():
+    with open('ahj_polygon_geoid.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Census_match_name', 'GEOID'])
+        ahjs = AHJ.objects.all()
+        count = 1
+        for ahj in ahjs:
+            if ahj.mpoly:
+                writer.writerow([ahj.mpoly.STATEABBR + ': ' + ahj.mpoly.NAMELSAD, ahj.mpoly.GEOID])
+                print('Written AHJ %i' % count)
+            else:
+                print('skip')
+            count += 1
+
 
 def export_dupe_ahjs_csv():
     with open('dupe_ahjs.csv', 'w') as csvfile:
@@ -143,45 +158,73 @@ def export_dupe_ahjs_csv():
 
 
 def create_edit(request):
-    edit_serializer = EditSerializer(data=request.data)
+    if type(request.data) is list:
+        return create_edit_mass(request)
+    edit_creation_message_status = process_edit_creation(request.data, request.user)
+    return Response(edit_creation_message_status[0], status=edit_creation_message_status[1])
+
+
+def create_edit_mass(request):
+    edit_creation_message_statuses = []
+    edit_data_array = request.data
+    for edit_data in edit_data_array:
+        edit_creation_message_statuses.append(process_edit_creation(edit_data, request.user))
+    created_edits = []
+    errors = {}
+    for x in range(len(edit_creation_message_statuses)):
+        if edit_creation_message_statuses[x][1] == status.HTTP_201_CREATED:
+            created_edits.append(edit_creation_message_statuses[x][0])
+        else:
+            errors[x] = edit_creation_message_statuses[x][0]
+    if errors:
+        response_status = status.HTTP_400_BAD_REQUEST
+    else:
+        response_status = status.HTTP_200_OK
+    return Response({'created': EditSerializer(created_edits, many=True).data, 'errors': errors}, status=response_status)
+
+
+def process_edit_creation(edit_data, user):
+    edit_serializer = EditSerializer(data=edit_data)
     if edit_serializer.is_valid():
         edit = Edit(**edit_serializer.validated_data)
 
         if not edit.validate_RecordType():
-            return Response({'detail': 'Invalid record type'})
+            return 'Invalid record type', status.HTTP_400_BAD_REQUEST
 
-        edit.ModifyingUserID = request.user.id
+        edit.ModifyingUserID = user.id
 
         if edit.EditType == 'create':
             if edit.RecordType != 'AHJ':
                 if edit.ParentID == '' or not edit.validate_ParentRecordType():
-                    return Response({'detail': 'Invalid parent record type'})
+                    return 'Invalid parent record type', status.HTTP_400_BAD_REQUEST
             edit.create_record()
         elif edit.EditType == 'update':
             if edit.RecordID == '':
-                return Response({'detail': 'No record ID was given'})
+                return 'No record ID was given', status.HTTP_400_BAD_REQUEST
             if edit.Value == '':
-                return Response({'detail': 'No value was given'})
+                return 'No value was given', status.HTTP_400_BAD_REQUEST
             if not edit.validate_FieldName():
-                return Response({'detail': 'Cannot submit edit for given field name.'})
+                return 'Cannot submit edit for given field name.', status.HTTP_400_BAD_REQUEST
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
+            if edit.Value == edit.PreviousValue:
+                return 'This edit has the same value as the record', status.HTTP_400_BAD_REQUEST
         elif edit.EditType == 'delete':
             if not check_record_edit_create_confirmed(edit.get_record()):
-                return Response({'detail': 'Cannot make delete request records awaiting confirmation'})
-
-        if request.user.is_superuser or edit.is_record_owner(request.user.id):
-            edit.accept(request.user.id)
-            return Response(EditSerializer(edit).data)
+                return 'Cannot make delete request records awaiting confirmation', status.HTTP_403_FORBIDDEN
+        else:
+            return 'Invalid edit type', status.HTTP_400_BAD_REQUEST
+        if user.is_superuser or edit.is_record_owner(user.id):
+            edit.accept(user.id)
         else:
             edit.save()
-            return Response(EditSerializer(edit).data)
-    return Response(edit_serializer.errors)
+        return EditSerializer(edit).data, status.HTTP_201_CREATED
+    return edit_serializer.errors, status.HTTP_400_BAD_REQUEST
 
 
 def set_edit(request, pk):
     edit = Edit.objects.filter(pk=pk).first()
     if edit is None:
-        return Response({'detail': 'Edit not found'})
+        return 'Edit not found', status.HTTP_404_NOT_FOUND
     user = request.user
     confirm_status = request.GET.get('confirm', '')
     if confirm_status != '':
@@ -189,12 +232,12 @@ def set_edit(request, pk):
     vote_status = request.GET.get('vote', '')
     if vote_status != '':
         return set_edit_vote(vote_status, user, edit)
-    return Response(EditSerializer(edit).data)
+    return EditSerializer(edit).data, status.HTTP_200_OK
 
 
 def set_edit_status(confirm_status, user, edit):
     if edit.IsConfirmed is not None:
-        return Response({'detail': 'Edit has already been processed. Please submit another edit.'})
+        return Response({'detail': 'Edit has already been processed. Please submit another edit.'}, status=status.HTTP_403_FORBIDDEN)
     if user.is_superuser or edit.is_record_owner(user.id):
         if confirm_status == 'accepted':
             edit.accept(user_id=user.id)
@@ -202,7 +245,7 @@ def set_edit_status(confirm_status, user, edit):
             edit.reject(user_id=user.id)
         return Response(EditSerializer(edit).data)
     else:
-        return Response({'detail': 'Could not confirm edit'})
+        return Response({'detail': 'Unauthorized to process edit.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 def set_edit_vote(vote_status, user, edit):
@@ -213,7 +256,7 @@ def set_edit_vote(vote_status, user, edit):
     elif vote_status == 'none':
         rating = None
     else:
-        return Response(EditSerializer(edit).data)
+        return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
     vote = Vote.objects.filter(Edit=edit).filter(VotingUserID=user.id).first()
     if vote is None:
         Vote.objects.create(Edit=edit, VotingUserID=user.id, Rating=rating)
@@ -224,4 +267,4 @@ def set_edit_vote(vote_status, user, edit):
             vote.Rating = rating
             vote.save()
     edit.set_vote_rating()
-    return Response(EditSerializer(edit).data)
+    return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)

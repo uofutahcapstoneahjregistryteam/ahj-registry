@@ -13,24 +13,6 @@ class EditSerializerHelper(serializers.Field):
         pass
 
 
-class OrangeButtonDecimalFieldSerializer(serializers.DecimalField):
-
-    def __init__(self, required, unit, decimal_or_precision, max_digits, decimal_places):
-        super().__init__(max_digits=max_digits, decimal_places=decimal_places)
-        self.required = required
-        self.unit = unit
-        self.decimal_or_precision = decimal_or_precision
-
-    def to_representation(self, value):
-        if self.decimal_or_precision == 'Decimal':
-            return {'Decimal': self.decimal_places, 'Unit': self.unit, 'Value': value}
-        elif self.decimal_or_precision == 'Precision':
-            return {'Unit': self.unit, 'Value': value, 'Precision': self.max_digits}
-
-    def to_internal_value(self, data):
-        return data['Value']
-
-
 class UserSerializer(serializers.Serializer):
     Email = serializers.CharField(source='email_address')
     Password = serializers.CharField(source='password', write_only=True)
@@ -76,13 +58,13 @@ class EditSerializer(serializers.Serializer):
 
 class LocationSerializer(serializers.Serializer):
     LocationID = EditSerializerHelper(source='*', required=False)
-    Altitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
+    Altitude = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
-    Elevation = OrangeButtonDecimalFieldSerializer(required=False, unit='Foot', decimal_or_precision='Decimal', max_digits=15, decimal_places=6)
-    Latitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=8, decimal_places=6)
+    Elevation = EditSerializerHelper(source='*', required=False)
+    Latitude = EditSerializerHelper(source='*', required=False)
     LocationDeterminationMethod = EditSerializerHelper(source='*', required=False)
     LocationType = EditSerializerHelper(source='*', required=False)
-    Longitude = OrangeButtonDecimalFieldSerializer(required=False, unit='Degree', decimal_or_precision='Precision', max_digits=9, decimal_places=6)
+    Longitude = EditSerializerHelper(source='*', required=False)
 
     def update(self, instance, validated_data):
         pass
