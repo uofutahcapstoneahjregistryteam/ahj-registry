@@ -201,10 +201,12 @@ def process_edit_creation(edit_data, user):
         elif edit.EditType == 'update':
             if edit.RecordID == '':
                 return 'No record ID was given', status.HTTP_400_BAD_REQUEST
+            if not edit.validate_FieldName():
+                return 'Invalid field name.', status.HTTP_400_BAD_REQUEST
             if edit.Value == '':
                 return 'No value was given', status.HTTP_400_BAD_REQUEST
-            if not edit.validate_FieldName():
-                return 'Cannot submit edit for given field name.', status.HTTP_400_BAD_REQUEST
+            if not edit.validate_Value():
+                return 'Invalid value given.', status.HTTP_400_BAD_REQUEST
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
             if edit.Value == edit.PreviousValue:
                 return 'This edit has the same value as the record', status.HTTP_400_BAD_REQUEST
@@ -249,6 +251,8 @@ def set_edit_status(confirm_status, user, edit):
 
 
 def set_edit_vote(vote_status, user, edit):
+    if user.id == edit.ModifyingUserID:
+        return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
     if vote_status == 'upvote':
         rating = True
     elif vote_status == 'downvote':
@@ -259,7 +263,8 @@ def set_edit_vote(vote_status, user, edit):
         return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
     vote = Vote.objects.filter(Edit=edit).filter(VotingUserID=user.id).first()
     if vote is None:
-        Vote.objects.create(Edit=edit, VotingUserID=user.id, Rating=rating)
+        if rating is not None:
+            Vote.objects.create(Edit=edit, VotingUserID=user.id, Rating=rating)
     else:
         if rating is None:
             vote.delete()

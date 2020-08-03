@@ -13,12 +13,16 @@ class EditTestCase(APITestCase):
     def setUp(self):
         self.superuser = User.objects.create(email_address='super', password='super', is_superuser=True, is_active=True)
         self.user = User.objects.create(email_address='user', password='user', is_active=True)
-    
+        self.voter = User.objects.create(email_address='voter', password='user', is_active=True)
+
     def become_super(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='super').key)
 
     def become_user(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='user').key)
+
+    def become_voter(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user__email_address='voter').key)
 
     def create_record_as_super(self, record_type, **kwargs):
         self.become_super()
@@ -680,7 +684,7 @@ class EditTestCase(APITestCase):
         update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
 
         self.assertTrue(update_response.status_code == status.HTTP_201_CREATED)
-        self.assertTrue(getattr(AHJ.objects.get(AHJID=RecordID), FieldName) == Value)
+        self.assertEqual(getattr(AHJ.objects.get(AHJID=RecordID), FieldName), Value)
 
     def test_edit_update_AHJ_TextField(self):
         ahj_response = self.create_record_as_super('AHJ')
@@ -692,7 +696,7 @@ class EditTestCase(APITestCase):
         update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
 
         self.assertTrue(update_response.status_code == status.HTTP_201_CREATED)
-        self.assertTrue(getattr(AHJ.objects.get(AHJID=RecordID), FieldName) == Value)
+        self.assertEqual(getattr(AHJ.objects.get(AHJID=RecordID), FieldName), Value)
 
     def test_edit_update_AHJ_ChoiceField(self):
         ahj_response = self.create_record_as_super('AHJ')
@@ -704,7 +708,19 @@ class EditTestCase(APITestCase):
         update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
 
         self.assertTrue(update_response.status_code == status.HTTP_201_CREATED)
-        self.assertTrue(getattr(AHJ.objects.get(AHJID=RecordID), FieldName) == Value)
+        self.assertEqual(getattr(AHJ.objects.get(AHJID=RecordID), FieldName), Value)
+
+    def test_edit_update_AHJ_ChoiceField_not_choice(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        RecordID = ahj_response.json()['RecordID']
+        RecordType = 'AHJ'
+        FieldName = 'BuildingCode'
+        Value = 'noodles'
+
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(getattr(AHJ.objects.get(AHJID=RecordID), FieldName), Value)
 
     def test_edit_update_Location_DecimalField(self):
         ahj_response = self.create_record_as_super('AHJ')
@@ -714,10 +730,117 @@ class EditTestCase(APITestCase):
         location_response = self.create_record_as_super('Location', parent_id=address_id)
         RecordID = location_response.json()['RecordID']
         RecordType = 'Location'
-        FieldName = 'Altitude'
-        Value = 1000
+        FieldName = 'Longitude'
+        Value = 90
 
         update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
 
         self.assertTrue(update_response.status_code == status.HTTP_201_CREATED)
-        self.assertTrue(getattr(Location.objects.get(id=RecordID), FieldName) == Value)
+        self.assertEqual(getattr(Location.objects.get(id=RecordID), FieldName), Value)
+
+    def test_edit_update_Location_DecimalField_not_decimal(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        location_response = self.create_record_as_super('Location', parent_id=address_id)
+        RecordID = location_response.json()['RecordID']
+        RecordType = 'Location'
+        FieldName = 'Longitude'
+        Value = 'cookies'
+
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(getattr(Location.objects.get(pk=RecordID), FieldName), Value)
+
+    def test_edit_update_Location_DecimalField_not_in_range(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
+        address_id = address_response.json()['RecordID']
+        location_response = self.create_record_as_super('Location', parent_id=address_id)
+        RecordID = location_response.json()['RecordID']
+        RecordType = 'Location'
+        FieldName = 'Longitude'
+        Value = -200
+
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+
+        self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(getattr(Location.objects.get(pk=RecordID), FieldName), Value)
+
+    """
+    Test voting on edits
+    """
+
+    def test_upvote(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'name'))
+        edit_id = update_response.json()['EditID']
+        self.become_voter()
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'upvote'))
+
+        edit = Edit.objects.get(pk=edit_id)
+        self.assertTrue(Vote.objects.filter(Edit=edit).exists())
+        self.assertEqual(edit.VoteRating, 1)
+
+    def test_downvote(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'name'))
+        edit_id = update_response.json()['EditID']
+        self.become_voter()
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'downvote'))
+
+        edit = Edit.objects.get(pk=edit_id)
+        self.assertTrue(Vote.objects.filter(Edit=edit).exists())
+        self.assertEqual(edit.VoteRating, -1)
+
+    def test_cancel_vote(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'name'))
+        edit_id = update_response.json()['EditID']
+        self.become_voter()
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'upvote'))
+
+        self.assertTrue(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'none'))
+        self.assertFalse(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+        self.assertEqual(Edit.objects.get(pk=edit_id).VoteRating, 0)
+
+    def test_if_never_voted_cant_cancel_vote(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'name'))
+        edit_id = update_response.json()['EditID']
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'none'))
+
+        self.assertFalse(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+        self.assertEqual(Edit.objects.get(pk=edit_id).VoteRating, 0)
+
+    def test_cant_vote_on_own_edit(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'name'))
+        edit_id = update_response.json()['EditID']
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'upvote'))
+        self.assertFalse(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+        self.assertEqual(Edit.objects.get(pk=edit_id).VoteRating, 0)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'downvote'))
+        self.assertFalse(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+        self.assertEqual(Edit.objects.get(pk=edit_id).VoteRating, 0)
+
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'none'))
+        self.assertFalse(Vote.objects.filter(Edit=Edit.objects.get(pk=edit_id)).exists())
+        self.assertEqual(Edit.objects.get(pk=edit_id).VoteRating, 0)

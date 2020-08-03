@@ -461,12 +461,29 @@ class Edit(models.Model):
         except FieldDoesNotExist:
             return False
 
+    def validate_Value(self):
+        record_field_meta = apps.get_model('core', self.RecordType)._meta.get_field(self.FieldName)
+        choices_dict = dict(record_field_meta.choices)
+        if choices_dict:
+            if self.Value not in choices_dict:
+                return False
+        if record_field_meta.__class__.__name__ == 'DecimalField':
+            try:
+                float(self.Value)
+            except ValueError:
+                return False
+        if self.RecordType in FIELD_VALIDATION:
+            if self.FieldName in FIELD_VALIDATION[self.RecordType]:
+                if not FIELD_VALIDATION[self.RecordType][self.FieldName](self.Value):
+                    return False
+        return True
+
     def set_vote_rating(self):
         votes = Vote.objects.filter(Edit=self)
         upvotes = len(votes.filter(Rating=True))
         downvotes = len(votes.filter(Rating=False))
-        self.VoteRating = upvotes - downvotes
-        self.save()
+        vote_update = {'VoteRating': upvotes - downvotes}
+        Edit.objects.filter(pk=self.id).update(**vote_update)
 
 
 class Vote(models.Model):

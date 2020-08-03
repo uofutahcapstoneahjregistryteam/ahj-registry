@@ -115,3 +115,10 @@ STAMP_TYPE_CHOICES = [
     ('Notary', 'Notary'),
     ('None', 'None')
 ]
+
+FIELD_VALIDATION = {
+    'Location': {
+        'Longitude': lambda value: -180 <= float(value) <= 180,
+        'Latitude': lambda value: -90 <= float(value) <= 90
+    }
+}
