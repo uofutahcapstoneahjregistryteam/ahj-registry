@@ -74,11 +74,14 @@ def edit_detail(request, pk):
 
 
 @api_view(['GET'])
-def add_owner_to_ahj(request):
+def owner_to_ahj(request):
     if request.auth is None:
         return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
     if not request.user.is_superuser:
         return Response('Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
+    mode = request.GET.get('mode')
+    if mode is None:
+        return Response('No mode specified', status=status.HTTP_400_BAD_REQUEST)
     user_id = request.GET.get('user')
     if user_id is None:
         return Response('No user specified', status=status.HTTP_400_BAD_REQUEST)
@@ -91,7 +94,14 @@ def add_owner_to_ahj(request):
     ahj = AHJ.objects.filter(AHJID=AHJID).first()
     if ahj is None:
         return Response('AHJ not found', status=status.HTTP_404_NOT_FOUND)
-    user.AHJ.add(ahj)
+
+    if mode == 'add':
+        user.AHJ.add(ahj)
+    elif mode == 'remove':
+        user.AHJ.remove(ahj)
+    else:
+        return Response('Invalid mode', status=status.HTTP_400_BAD_REQUEST)
+
     return Response('success', status=status.HTTP_200_OK)
 
 
@@ -104,14 +114,7 @@ class AHJList(generics.ListAPIView):
     search_fields = ['AHJName', 'address__City', 'address__County', 'address__Country', 'address__StateProvince', 'address__ZipPostalCode']
 
     def get_serializer_context(self):
-        confirmed = False
-        highest_voted = False
-        view_mode = self.request.GET.get('view', '')
-        if view_mode == 'confirmed':
-            confirmed = True
-        elif view_mode == 'highest_voted':
-            highest_voted = True
-        return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted}
+        return set_view_mode(self.request)
 
 
 class AHJDetail(generics.RetrieveAPIView):
@@ -121,14 +124,7 @@ class AHJDetail(generics.RetrieveAPIView):
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
     def get_serializer_context(self):
-        confirmed = False
-        highest_voted = False
-        view_mode = self.request.GET.get('view', '')
-        if view_mode == 'confirmed':
-            confirmed = True
-        elif view_mode == 'highest_voted':
-            highest_voted = True
-        return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted}
+        return set_view_mode(self.request)
 
 
 # class RecordEditsList(generics.RetrieveAPIView):

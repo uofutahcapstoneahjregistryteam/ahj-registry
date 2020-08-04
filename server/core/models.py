@@ -42,7 +42,7 @@ def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest
         edit = record_edits_field_name.filter(IsConfirmed=True).order_by('-ConfirmedDate').first()
         return retrieve_edit(record, field_name, edit)
     elif highest_vote_rating:
-        edits = record_edits_field_name.order_by('-VoteRating')
+        edits = record_edits_field_name.filter(IsConfirmed=None).order_by('-VoteRating')
         if len(edits) > 1:
             highest_vote = edits.first().VoteRating
             edits = edits.filter(VoteRating=highest_vote)

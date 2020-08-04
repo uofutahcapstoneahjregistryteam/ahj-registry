@@ -157,6 +157,17 @@ def export_dupe_ahjs_csv():
             i += 1
 
 
+def set_view_mode(request):
+    confirmed = False
+    highest_voted = False
+    view_mode = request.GET.get('view', '')
+    if view_mode == 'confirmed':
+        confirmed = True
+    elif view_mode == 'highest_voted':
+        highest_voted = True
+    return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted}
+
+
 def create_edit(request):
     if type(request.data) is list:
         return create_edit_mass(request)
@@ -253,7 +264,7 @@ def set_edit_status(confirm_status, user, edit):
 
 
 def set_edit_vote(vote_status, user, edit):
-    if user.id == edit.ModifyingUserID:
+    if edit.IsConfirmed or user.id == edit.ModifyingUserID:
         return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
     if vote_status == 'upvote':
         rating = True
