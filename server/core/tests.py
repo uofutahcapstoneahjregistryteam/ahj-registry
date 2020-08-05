@@ -1197,6 +1197,27 @@ class EditTestCase(APITestCase):
 
         self.assertEqual(AHJName, 'newname')
 
+    def test_view_detail_unconfirmed_highest_voted_no_unconfirmed_return_latest_confirmed(self):
+        AHJ.objects.all().delete()
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'oldname'))
+        edit_id = update_response.json()['EditID']
+        self.become_voter()
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'upvote'))
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'newname'))
+        edit_id = update_response.json()['EditID']
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        ahj_response = self.client.get(AHJ_DETAIL_ENDPOINT(AHJID, 'highest_voted'))
+        AHJName = ahj_response.json()['AHJName']['Value']
+
+        self.assertEqual(AHJName, 'newname')
+
     def test_view_list_latest(self):
         AHJ.objects.all().delete()
         ahj_response = self.create_record_as_super('AHJ')
@@ -1251,6 +1272,27 @@ class EditTestCase(APITestCase):
         self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
         self.become_user()
         self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'newname'))
+
+        ahj_response = self.client.get(AHJ_LIST_ENDPOINT('highest_voted'))
+        AHJName = ahj_response.json()['results'][0]['AHJName']['Value']
+
+        self.assertEqual(AHJName, 'newname')
+
+    def test_view_list_unconfirmed_highest_voted_no_unconfirmed_return_latest_confirmed(self):
+        AHJ.objects.all().delete()
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'oldname'))
+        edit_id = update_response.json()['EditID']
+        self.become_voter()
+        self.client.get(EDIT_DETAIL_ENDPOINT_VOTE(edit_id, 'upvote'))
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+        self.become_user()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(AHJID, 'AHJ', 'AHJName', 'newname'))
+        edit_id = update_response.json()['EditID']
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
 
         ahj_response = self.client.get(AHJ_LIST_ENDPOINT('highest_voted'))
         AHJName = ahj_response.json()['results'][0]['AHJName']['Value']

@@ -49,6 +49,8 @@ def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest
             edit = edits.order_by('-ModifiedDate').first()
         else:
             edit = edits.first()
+        if edit is None:
+            return get_edit(record, field_name, False, True, False)
         return retrieve_edit(record, field_name, edit)
     else:
         edit = record_edits_field_name.order_by('-ModifiedDate').first()
