@@ -34,19 +34,19 @@ class UserSerializer(serializers.Serializer):
 
 
 class EditSerializer(serializers.Serializer):
-    EditID = serializers.IntegerField(source='id', required=False)
+    EditID = serializers.IntegerField(source='id', required=False, read_only=True)
     RecordID = serializers.CharField(required=False)
     RecordType = serializers.CharField(required=False, write_only=True)
     EditType = serializers.CharField(required=False, write_only=True)
     ParentID = serializers.CharField(required=False, write_only=True)
     ParentRecordType = serializers.CharField(required=False, write_only=True)
-    PreviousValue = serializers.CharField(required=False)
+    PreviousValue = serializers.CharField(required=False, read_only=True)
     FieldName = serializers.CharField(required=False, write_only=True)
     Value = serializers.CharField(required=False)
-    IsConfirmed = serializers.NullBooleanField(required=False)
-    ConfirmingUserID = UserSerializer(source='get_user_confirm', required=False)
-    ModifyingUserID = UserSerializer(source='get_user_modify', required=False)
-    ModifiedDate = serializers.DateTimeField(required=False)
+    IsConfirmed = serializers.NullBooleanField(required=False, read_only=True)
+    ConfirmingUserID = UserSerializer(source='get_user_confirm', required=False, read_only=True)
+    ModifyingUserID = UserSerializer(source='get_user_modify', required=False, read_only=True)
+    ModifiedDate = serializers.DateTimeField(required=False, read_only=True)
     VoteRating = serializers.IntegerField(required=False, read_only=True)
 
     def update(self, instance, validated_data):

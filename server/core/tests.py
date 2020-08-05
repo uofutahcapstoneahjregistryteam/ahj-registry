@@ -89,7 +89,7 @@ class EditTestCase(APITestCase):
     def test_add_owner_to_AHJ(self):
         response = self.create_record_as_super('AHJ')
         AHJID = response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
 
         self.assertTrue(self.owner.AHJ.filter(AHJID=AHJID).exists())
         self.assertTrue(AHJ.objects.filter(user__id=self.owner.id))
@@ -97,8 +97,8 @@ class EditTestCase(APITestCase):
     def test_remove_owner_from_AHJ(self):
         response = self.create_record_as_super('AHJ')
         AHJID = response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('remove', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('remove', self.owner.id, AHJID))
 
         self.assertFalse(self.owner.AHJ.filter(AHJID=AHJID).exists())
         self.assertFalse(AHJ.objects.filter(user__id=self.owner.id))
@@ -468,7 +468,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_confirm_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
         edit_id = address_response.json()['EditID']
 
@@ -480,7 +480,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_reject_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
         address_id = address_response.json()['RecordID']
         edit_id = address_response.json()['EditID']
@@ -494,7 +494,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_unconfirmed_parent_block_confirm_Address(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
         edit_id = address_response.json()['EditID']
 
@@ -506,7 +506,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_confirm_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
         edit_id = contact_response.json()['EditID']
 
@@ -518,7 +518,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_reject_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
         contact_id = contact_response.json()['RecordID']
         edit_id = contact_response.json()['EditID']
@@ -532,7 +532,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_unconfirmed_parent_block_confirm_Contact(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
         edit_id = contact_response.json()['EditID']
 
@@ -544,7 +544,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_confirm_EngRevReq(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         eng_rev_req_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
         edit_id = eng_rev_req_response.json()['EditID']
 
@@ -556,7 +556,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_reject_EngRevReq(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         eng_rev_req_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
         eng_rev_req_id = eng_rev_req_response.json()['RecordID']
         edit_id = eng_rev_req_response.json()['EditID']
@@ -570,7 +570,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_unconfirmed_parent_block_confirm_EngRevReq(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_user('EngineeringReviewRequirement', parent_id=AHJID)
         edit_id = contact_response.json()['EditID']
 
@@ -582,7 +582,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_confirm_Contact_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
@@ -596,7 +596,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_reject_Contact_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
@@ -612,7 +612,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_unconfirmed_parent_block_confirm_Contact_Address(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
@@ -626,7 +626,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_confirm_Address_Location(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
         address_id = address_response.json()['RecordID']
         location_response = self.create_record_as_user('Location', parent_id=address_id)
@@ -640,7 +640,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_reject_Address_Location(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_super('Address', parent_id=AHJID, parent_type='AHJ')
         address_id = address_response.json()['RecordID']
         location_response = self.create_record_as_user('Location', parent_id=address_id)
@@ -656,7 +656,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_unconfirmed_parent_block_confirm_Address_Location(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_user('Address', parent_id=AHJID, parent_type='AHJ')
         address_id = address_response.json()['RecordID']
         location_response = self.create_record_as_user('Location', parent_id=address_id)
@@ -670,7 +670,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_owner_create_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        self.client.get(ADD_AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
         address_response = self.create_record_as_owner('Address', parent_id=AHJID, parent_type='AHJ')
         edit_id = address_response.json()['EditID']
 

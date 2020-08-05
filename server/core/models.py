@@ -24,7 +24,7 @@ import uuid
 
 def retrieve_edit(record, field_name, edit):
     if edit is None:
-        if record.__class__.__name__ == 'AHJID':
+        if record.__class__.__name__ == 'AHJ':
             return Edit(RecordID=record.AHJID, Value=getattr(record, field_name), FieldName=field_name)
         return Edit(RecordID=record.id, Value=getattr(record, field_name), FieldName=field_name)
     else:
