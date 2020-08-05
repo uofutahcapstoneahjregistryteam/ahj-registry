@@ -7,6 +7,7 @@ urlpatterns = [
     path('ahj/', views.AHJList.as_view(), name="ahj"),
     path('edit/submit/', views.submit_edit, name='edit'),
     path('edit/<str:pk>/', views.edit_detail, name='edit'),
+    path('edit/tooltip/<uuid:AHJID>/', views.tooltip_edits, name='edit'),
     path('ahj_csv/', views.ahj_upload, name="upload"),
     path('geo/', include('ahj_gis.urls')),
     path('ahj/<uuid:AHJID>/', views.AHJDetail.as_view(), name="ahj"),

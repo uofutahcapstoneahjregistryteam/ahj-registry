@@ -286,3 +286,31 @@ def set_edit_vote(vote_status, user, edit):
             vote.save()
     edit.set_vote_rating()
     return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
+
+
+def get_tooltip_edits(request, AHJID):
+    ahj = AHJ.objects.filter(AHJID=AHJID).first()
+    if ahj is None:
+        return Response('AHJ not found', status=status.HTTP_404_NOT_FOUND)
+    ahj_unconfirmed_edits = Edit.objects.filter(RecordID=AHJID)
+    ahj_address = Address.objects.filter(AHJ=ahj).first()
+    if ahj_address is not None:
+        ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=ahj_address.id).filter(RecordType='Address')
+        ahj_address_location = Location.objects.filter(Address=ahj_address).first()
+        if ahj_address_location is not None:
+            ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=ahj_address_location.id).filter(RecordType='Location')
+    contacts = Contact.objects.filter(AHJ=ahj)
+    for contact in contacts:
+        ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=contact.id).filter(RecordType='Contact')
+        contact_address = Address.objects.filter(Contact=contact)
+        if contact_address is not None:
+            ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=contact_address.id).filter(RecordType='Address')
+            contact_address_location = Location.objects.filter(Address=contact_address).first()
+            if contact_address_location is not None:
+                ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=contact_address_location.id).filter(RecordType='Location')
+    engrevreqs = EngineeringReviewRequirement.objects.filter(AHJ=ahj)
+    for engrevreq in engrevreqs:
+        ahj_unconfirmed_edits |= Edit.objects.filter(RecordID=engrevreq.id).filter(RecordType='EngineeringReviewRequirement')
+    ahj_unconfirmed_edits = ahj_unconfirmed_edits.filter(IsConfirmed=None)
+
+    return Response(EditSerializer(ahj_unconfirmed_edits, many=True).data, status=status.HTTP_200_OK)

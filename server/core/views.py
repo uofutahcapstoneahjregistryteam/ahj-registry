@@ -74,6 +74,13 @@ def edit_detail(request, pk):
 
 
 @api_view(['GET'])
+def tooltip_edits(request, AHJID):
+    if request.auth is None:
+        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+    return get_tooltip_edits(request, AHJID)
+
+
+@api_view(['GET'])
 def owner_to_ahj(request):
     if request.auth is None:
         return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
