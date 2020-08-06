@@ -35,13 +35,10 @@ def ahj_upload(request):
     # setup a stream which is when we loop through each line we are able to handle a data in a stream
     io_string = io.StringIO(data_set)
     next(io_string)
-    in_city = True
     i = 1
     for column in csv.reader(io_string, delimiter=',', quotechar="|"):
-        Address.objects.create(
-            AHJ=AHJ.objects.create(AHJName=column[1]),
-            StateProvince=column[0]
-        )
+        ahj = AHJ.objects.create(AHJName=column[1])
+        address = Address.objects.create(AHJ=ahj, StateProvince=column[0])
         print(i)
         i += 1
     context = {}

@@ -409,10 +409,6 @@ class Edit(models.Model):
         return User.objects.filter(pk=self.ModifyingUserID).first()
 
     def accept(self, user_id):
-        self.IsConfirmed = True
-        self.ConfirmingUserID = user_id
-        self.ConfirmedDate = timezone.now()
-
         if self.EditType == 'create':
             if self.RecordType != 'AHJ':
                 parent = self.get_parent()
@@ -422,21 +418,23 @@ class Edit(models.Model):
             record_query_set = self.get_record_query_set()
             if record_query_set.exists():
                 if not check_record_edit_create_confirmed(record_query_set.first()):
+                    self.save()
                     return
                 field_update = {self.FieldName: self.Value}
                 record_query_set.update(**field_update)
         elif self.EditType == 'delete':
             self.get_record().chain_delete(self)
+        self.IsConfirmed = True
+        self.ConfirmingUserID = user_id
+        self.ConfirmedDate = timezone.now()
         self.save()
 
     def reject(self, user_id):
+        if self.EditType == 'create':
+            self.get_record().chain_delete(self)
         self.IsConfirmed = False
         self.ConfirmingUserID = user_id
         self.ConfirmedDate = timezone.now()
-
-        if self.EditType == 'create':
-            self.get_record().chain_delete(self)
-
         self.save()
 
     def validate_RecordType(self):

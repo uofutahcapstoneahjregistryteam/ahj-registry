@@ -1052,6 +1052,20 @@ class EditTestCase(APITestCase):
 
         self.assertTrue(update_response.status_code == status.HTTP_400_BAD_REQUEST)
 
+    def test_edit_update_by_owner_super_on_unconfirmed_record(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        RecordID = ahj_response.json()['RecordID']
+        RecordType = 'AHJ'
+        FieldName = 'AHJName'
+        Value = 'name'
+
+        self.become_super()
+        update_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_UPDATE(RecordID, RecordType, FieldName, Value))
+        edit_id = update_response.json()['EditID']
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertEqual(getattr(AHJ.objects.get(AHJID=RecordID), FieldName), '')
+
     """
     Test voting on edits
     """
