@@ -275,7 +275,24 @@ def send_user_confirmation_email(user):
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': user.email_confirmation_token.make_token(user)
     })
-    EmailMessage(subject, message, to=[user.email_address]).send()
+    email = EmailMessage(subject, message, to=[user.email_address])
+    email.content_subtype = 'html'
+    email.send()
+
+
+def send_edit_confirmation_email(user, edit):
+    subject = 'AHJ Registry - An edit was submitted.'
+    message = render_to_string('confirm_reject_edit_email.html', {
+        'user': user,
+        'domain': 'localhost:8000',
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': user.email_confirmation_token.make_token(user),
+        'edit': edit,
+        'ahj': edit.get_record().get_ahj()
+    })
+    email = EmailMessage(subject, message, to=[user.email_address])
+    email.content_subtype = 'html'
+    email.send()
 
 
 class EmailConfirmationTokenGenerator(PasswordResetTokenGenerator):

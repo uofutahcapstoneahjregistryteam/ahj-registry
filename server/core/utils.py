@@ -200,38 +200,41 @@ def process_edit_creation(edit_data, user):
         edit = Edit(**edit_serializer.validated_data)
 
         if not edit.validate_RecordType():
-            return 'Invalid record type', status.HTTP_400_BAD_REQUEST
+            return {'detail': 'Invalid record type'}, status.HTTP_400_BAD_REQUEST
 
         edit.ModifyingUserID = user.id
 
         if edit.EditType == 'create':
             if edit.RecordType != 'AHJ':
                 if edit.ParentID == '' or not edit.validate_ParentRecordType():
-                    return 'Invalid parent record type', status.HTTP_400_BAD_REQUEST
+                    return {'detail': 'Invalid parent record type'}, status.HTTP_400_BAD_REQUEST
             edit.create_record()
         elif edit.EditType == 'update':
             if edit.RecordID == '':
-                return 'No record ID was given', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'No record ID was given'}, status.HTTP_400_BAD_REQUEST
             if not edit.validate_FieldName():
-                return 'Invalid field name.', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'Invalid field name.'}, status.HTTP_400_BAD_REQUEST
             if edit.Value == '':
-                return 'No value was given', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'No value was given'}, status.HTTP_400_BAD_REQUEST
             if not edit.validate_Value():
-                return 'Invalid value given.', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'Invalid value given.'}, status.HTTP_400_BAD_REQUEST
             if Edit.objects.filter(RecordID=edit.RecordID).filter(FieldName=edit.FieldName).filter(IsConfirmed=None).filter(Value=edit.Value).exists():
-                return 'An unconfirmed edit with this value already exists.', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'An unconfirmed edit with this value already exists.'}, status.HTTP_400_BAD_REQUEST
             edit.PreviousValue = getattr(edit.get_record(), edit.FieldName)
             if edit.Value == edit.PreviousValue:
-                return 'This edit has the same value as the record', status.HTTP_400_BAD_REQUEST
+                return {'detail': 'This edit has the same value as the record'}, status.HTTP_400_BAD_REQUEST
         elif edit.EditType == 'delete':
             if not check_record_edit_create_confirmed(edit.get_record()):
-                return 'Cannot make delete request records awaiting confirmation', status.HTTP_403_FORBIDDEN
+                return {'detail': 'Cannot make delete request records awaiting confirmation'}, status.HTTP_403_FORBIDDEN
         else:
-            return 'Invalid edit type', status.HTTP_400_BAD_REQUEST
+            return {'detail': 'Invalid edit type'}, status.HTTP_400_BAD_REQUEST
         if user.is_superuser or edit.is_record_owner(user.id):
             edit.accept(user.id)
         else:
             edit.save()
+            record_owners = edit.get_record_owners()
+            for owner in record_owners:
+                send_edit_confirmation_email(owner, edit)
         return EditSerializer(edit).data, status.HTTP_201_CREATED
     return edit_serializer.errors, status.HTTP_400_BAD_REQUEST
 
@@ -239,7 +242,7 @@ def process_edit_creation(edit_data, user):
 def set_edit(request, pk):
     edit = Edit.objects.filter(pk=pk).first()
     if edit is None:
-        return 'Edit not found', status.HTTP_404_NOT_FOUND
+        return Response({'detail': 'Edit not found'}, status=status.HTTP_404_NOT_FOUND)
     user = request.user
     confirm_status = request.GET.get('confirm', '')
     if confirm_status != '':
@@ -247,7 +250,7 @@ def set_edit(request, pk):
     vote_status = request.GET.get('vote', '')
     if vote_status != '':
         return set_edit_vote(vote_status, user, edit)
-    return EditSerializer(edit).data, status.HTTP_200_OK
+    return Response(EditSerializer(edit).data, status=status.HTTP_200_OK)
 
 
 def set_edit_status(confirm_status, user, edit):

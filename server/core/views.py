@@ -217,7 +217,32 @@ def activate(request, uidb64, token):
             user = None
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
+        message = 'User not found.'
     if user is not None and user.email_confirmation_token.check_token(user, token):
         user.is_active = True
         user.save()
-    return redirect('http://localhost:8080/#/login')
+        message = 'Success'
+    return render(request, 'email_link_landing_page.html', {'message': message})
+
+
+@api_view(['GET'])
+def set_edit_status_email(request, uidb64, token, edit_id):
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+        edit = Edit.objects.get(pk=edit_id)
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+        edit = None
+        user = None
+        message = 'User or edit not found.'
+    if user is not None and edit is not None and user.email_confirmation_token.check_token(user, token):
+        if edit.IsConfirmed is not None:
+            message = 'This edit has already been processed.'
+        elif user.is_superuser or edit.is_record_owner(user.id):
+            confirm_status = request.GET.get('confirm')
+            if confirm_status == 'accepted':
+                edit.accept(user.id)
+            elif confirm_status == 'rejected':
+                edit.reject(user.id)
+            message = 'Success'
+    return render(request, 'email_link_landing_page.html', {'message': message})

@@ -23,5 +23,7 @@ urlpatterns = [
     path('login/', views.ObtainAuthTokenUserInfo.as_view(), name='api-token-auth'),
     path('register/', views.CreateUser.as_view(), name='register'),
     url(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
-        views.activate, name='activate')
+        views.activate, name='activate'),
+    url(r'^edit/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/(?P<edit_id>[0-9]+)/$',
+        views.set_edit_status_email, name='set_edit_status_email')
 ]
