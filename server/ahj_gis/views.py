@@ -6,12 +6,13 @@ from core.serializers import AHJSerializer
 from rest_framework.response import Response
 from .constants import GOOGLE_GEOCODING_API_KEY
 from googlemaps import Client
+from rest_framework import status
 
 gmaps = Client(key=GOOGLE_GEOCODING_API_KEY)
 
 
 @api_view(['POST'])
-def find_ahj_coordinate(request):
+def find_ahj_location(request):
     if request.auth is None:
         return Response(request.detail)
 
@@ -29,11 +30,11 @@ def find_ahj_coordinate(request):
         longitude = float(longitude)
         latitude = float(latitude)
     except (TypeError, ValueError):
-        return Response({'detail': 'invalid coordinates'})
+        return Response({'detail': 'invalid location'}, status=status.HTTP_400_BAD_REQUEST)
 
     ahj_set = get_ahj_set(longitude, latitude)
 
-    return Response(AHJSerializer(ahj_set, many=True).data)
+    return Response(AHJSerializer(ahj_set, many=True).data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -50,6 +51,8 @@ def find_ahj_address(request):
 
     geocode_result = gmaps.geocode(addr_line_1 + ' ' + addr_line_2 + ' ' + addr_line_3 + ', ' + city + ', ' + state_province + ' ' + zip_postal_code)
     print(geocode_result)
+    if len(geocode_result) == 0:
+        return Response({'detail': 'Google Maps Geocoding failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     # Find AHJ's for all possible address matches
     ahj_set = []
     for x in range(len(geocode_result)):
@@ -58,4 +61,4 @@ def find_ahj_address(request):
         latitude = coordinates['lat']
         ahj_set += get_ahj_set(longitude, latitude)
 
-    return Response(AHJSerializer(ahj_set, many=True).data)
+    return Response(AHJSerializer(ahj_set, many=True).data, status=status.HTTP_200_OK)

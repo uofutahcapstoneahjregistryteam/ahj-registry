@@ -3,6 +3,6 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('coordinate/', views.find_ahj_coordinate, name='coordinate'),
+    path('location/', views.find_ahj_location, name='location'),
     path('address/', views.find_ahj_address, name='address')
 ]
