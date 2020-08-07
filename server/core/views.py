@@ -71,13 +71,6 @@ def edit_detail(request, pk):
 
 
 @api_view(['GET'])
-def tooltip_edits(request, AHJID):
-    if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
-    return get_tooltip_edits(request, AHJID)
-
-
-@api_view(['GET'])
 def owner_to_ahj(request):
     if request.auth is None:
         return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
@@ -131,11 +124,11 @@ class AHJDetail(generics.RetrieveAPIView):
         return set_view_mode(self.request)
 
 
-# class RecordEditsList(generics.RetrieveAPIView):
-#     lookup_field = 'RecordID'
-#     queryset = Edit.objects.filter(lookup_field).filter(IsConfirmed=None)
-#     serializer_class = EditSerializer
-#     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
+class EditList(generics.ListAPIView):
+    queryset = Edit.objects.all()
+    serializer_class = EditSerializer
+    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
+    filter_class = EditFilter
 
 
 class ContactDetail(generics.RetrieveAPIView):

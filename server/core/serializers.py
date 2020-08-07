@@ -14,6 +14,7 @@ class EditSerializerHelper(serializers.Field):
 
 
 class UserSerializer(serializers.Serializer):
+    UserID = serializers.IntegerField(source='id')
     Email = serializers.CharField(source='email_address')
     Password = serializers.CharField(source='password', write_only=True)
     FirstName = serializers.CharField(source='first_name')
