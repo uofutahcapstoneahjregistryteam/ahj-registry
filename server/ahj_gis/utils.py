@@ -4,12 +4,14 @@ from core.models import AHJ, Address
 import csv
 
 
-def get_ahj_set(longitude, latitude):
+def filter_ahjs_by_location(longitude, latitude, **kwargs):
     coordinate = Point(longitude, latitude)
 
     # Filter by intersects
-    intersects_poly_set = Polygon.objects.filter(mpoly__intersects=coordinate)
-
+    if 'ahjs_to_search' in kwargs:
+        intersects_poly_set = Polygon.objects.filter(ahj__in=kwargs['ahjs_to_search']).filter(mpoly__intersects=coordinate)
+    else:
+        intersects_poly_set = Polygon.objects.filter(mpoly__intersects=coordinate)
     covers_poly_set = []
     # Filter intersects results by covers
     for poly in intersects_poly_set:
@@ -18,13 +20,7 @@ def get_ahj_set(longitude, latitude):
             covers_poly_set.append(poly)
 
     # Combine all of the AHJ's with the found names into one QuerySet
-    ahj_set = []
-    for poly in covers_poly_set:
-        # Use filter and first to not throw error when an AHJ for the found polygon does not exist
-        poly_ahj = AHJ.objects.filter(mpoly=poly).first()
-        if poly_ahj is not None:
-            ahj_set.append(poly_ahj)
-    return ahj_set
+    return AHJ.objects.filter(mpoly__in=covers_poly_set)
 
 
 def get_orange_button_value_primitive(field):

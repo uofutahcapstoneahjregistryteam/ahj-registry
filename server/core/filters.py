@@ -2,6 +2,11 @@ import rest_framework_filters as filters
 from .models import *
 from django_filters import rest_framework as df_filters
 from rest_framework import filters as rf_filters
+from ahj_gis import utils as ahj_gis_utils
+from googlemaps import Client
+from ahj_gis.constants import GOOGLE_GEOCODING_API_KEY
+
+gmaps = Client(key=GOOGLE_GEOCODING_API_KEY)
 
 
 class CharInFilter(df_filters.BaseInFilter, df_filters.CharFilter):
@@ -24,7 +29,6 @@ class RecordIDFilter(df_filters.BaseInFilter):
 
     def filter(self, qs, value):
         try:
-            print(value)
             value = int(value[0])
             return self.NumberFilter.filter(qs, value)
         except ValueError:
@@ -35,6 +39,33 @@ class RecordIDFilter(df_filters.BaseInFilter):
                 return qs
 
 
+class LocationFilter(df_filters.BaseInFilter):
+    def filter(self, qs, value):
+        try:
+            longitude = float(value[0])
+            latitude = float(value[1])
+            return ahj_gis_utils.filter_ahjs_by_location(longitude, latitude, ahjs_to_search=qs)
+        except ValueError:
+            return qs
+
+
+class AddressFilter(df_filters.BaseInFilter):
+    def filter(self, qs, value):
+        address = ''
+        for string in value:
+            address += string
+        geocode_result = gmaps.geocode(address)
+        if len(geocode_result) == 0:
+            return qs
+        ahj_qs = AHJ.objects.none()
+        for x in range(len(geocode_result)):
+            coordinates = geocode_result[x]['geometry']['location']
+            longitude = coordinates['lng']
+            latitude = coordinates['lat']
+            ahj_qs |= ahj_gis_utils.filter_ahjs_by_location(longitude, latitude, ahjs_to_search=qs)
+        return ahj_qs
+
+
 class AHJFilter(filters.FilterSet, rf_filters.SearchFilter):
     AHJID__in = df_filters.UUIDFilter(field_name='AHJID')
     BuildingCode__in = CharInFilter(field_name='BuildingCode', lookup_expr='in')
@@ -42,6 +73,8 @@ class AHJFilter(filters.FilterSet, rf_filters.SearchFilter):
     FireCode__in = CharInFilter(field_name='FireCode', lookup_expr='in')
     ResidentialCode__in = CharInFilter(field_name='ResidentialCode', lookup_expr='in')
     WindCode__in = CharInFilter(field_name='WindCode', lookup_expr='in')
+    Location__in = LocationFilter()
+    Address__in = AddressFilter()
 
     class Meta:
         model = AHJ
