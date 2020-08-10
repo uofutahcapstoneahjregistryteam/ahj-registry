@@ -15,45 +15,45 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 
 
-def ahj_upload(request):
-    # declaring template
-    template = "ahj_upload.html"
-    data = AHJ.objects.all()
-    # prompt is a context variable that can have different values      depending on their context
-    prompt = {
-        'order': 'Order of the CSV should be state_abbr, (city|county)_name',
-        'profiles': data
-              }
-    # GET request returns the value of the data with the specified key.
-    if request.method == "GET":
-        return render(request, template, prompt)
-    csv_file = request.FILES['file']
-    # let's check if it is a csv file
-    if not csv_file.name.endswith('.csv'):
-        messages.error(request, 'THIS IS NOT A CSV FILE')
-    data_set = csv_file.read().decode('UTF-8')
-    # setup a stream which is when we loop through each line we are able to handle a data in a stream
-    io_string = io.StringIO(data_set)
-    next(io_string)
-    i = 1
-    for column in csv.reader(io_string, delimiter=',', quotechar="|"):
-        ahj = AHJ.objects.create(AHJName=column[1])
-        address = Address.objects.create(AHJ=ahj, StateProvince=column[0])
-        print(i)
-        i += 1
-    context = {}
-    return render(request, template, context)
+# def ahj_upload(request):
+#     # declaring template
+#     template = "ahj_upload.html"
+#     data = AHJ.objects.all()
+#     # prompt is a context variable that can have different values      depending on their context
+#     prompt = {
+#         'order': 'Order of the CSV should be state_abbr, (city|county)_name',
+#         'profiles': data
+#               }
+#     # GET request returns the value of the data with the specified key.
+#     if request.method == "GET":
+#         return render(request, template, prompt)
+#     csv_file = request.FILES['file']
+#     # let's check if it is a csv file
+#     if not csv_file.name.endswith('.csv'):
+#         messages.error(request, 'THIS IS NOT A CSV FILE')
+#     data_set = csv_file.read().decode('UTF-8')
+#     # setup a stream which is when we loop through each line we are able to handle a data in a stream
+#     io_string = io.StringIO(data_set)
+#     next(io_string)
+#     i = 1
+#     for column in csv.reader(io_string, delimiter=',', quotechar="|"):
+#         ahj = AHJ.objects.create(AHJName=column[1])
+#         address = Address.objects.create(AHJ=ahj, StateProvince=column[0])
+#         print(i)
+#         i += 1
+#     context = {}
+#     return render(request, template, context)
 
 
-@api_view(['GET'])
-def get_ahj_history(request, pk):
-    if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
-    try:
-        ahj = AHJ.objects.get(pk=pk)
-    except AHJ.DoesNotExist:
-        return Response({'detail': 'AHJ does not exist'})
-    return get_ahj_diff(ahj)
+# @api_view(['GET'])
+# def get_ahj_history(request, pk):
+#     if request.auth is None:
+#         return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+#     try:
+#         ahj = AHJ.objects.get(pk=pk)
+#     except AHJ.DoesNotExist:
+#         return Response({'detail': 'AHJ does not exist'})
+#     return get_ahj_diff(ahj)
 
 
 @api_view(['POST'])
@@ -129,18 +129,6 @@ class EditList(generics.ListAPIView):
     serializer_class = EditSerializer
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
     filter_class = EditFilter
-
-
-class ContactDetail(generics.RetrieveAPIView):
-    queryset = Contact.objects.all()
-    serializer_class = ContactSerializer
-    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
-
-
-class EngineeringReviewRequirementDetail(generics.RetrieveAPIView):
-    queryset = EngineeringReviewRequirement.objects.all()
-    serializer_class = EngineeringReviewRequirementSerializer
-    permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly,)
 
 
 class AHJHistory(generics.ListAPIView):
