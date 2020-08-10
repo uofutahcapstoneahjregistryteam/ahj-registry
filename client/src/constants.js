@@ -6,10 +6,76 @@ const TOKEN_AUTH = "";
 export default {
   API_ENDPOINT: API_ENDPOINT,
   TOKEN_AUTH: TOKEN_AUTH,
+  AHJ_FIELDS: {
+    RecordID: "",
+    AHJName: "",
+    Description: "",
+    BuildingCode: "",
+    BuildingCodeNotes: "",
+    ElectricCode: "",
+    ElectricCodeNotes: "",
+    FireCode: "",
+    FireCodeNotes: "",
+    ResidentialCode: "",
+    ResidentialCodeNotes: "",
+    WindCode: "",
+    WindCodeNotes: "",
+    DocumentSubmissionMethod: "",
+    DocumentSubmissionMethodNotes: "",
+    FileFolderURL: "",
+    Address: null
+  },
+  CONTACT_FIELDS: {
+    RecordID: "",
+    ContactTimezone: "",
+    ContactType: "",
+    Description: "",
+    Email: "",
+    FirstName: "",
+    MiddleName: "",
+    LastName: "",
+    MobilePhone: "",
+    WorkPhone: "",
+    HomePhone: "",
+    Title: "",
+    PreferredContactMethod: "",
+    Address: null
+  },
+  ADDRESS_FIELDS: {
+    RecordID: "",
+    AddrLine1: "",
+    AddrLine2: "",
+    AddrLine3: "",
+    AddressType: "",
+    City: "",
+    Country: "",
+    County: "",
+    Description: "",
+    StateProvince: "",
+    ZipPostalCode: "",
+    Location: null
+  },
+  LOCATION_FIELDS: {
+    RecordID: "",
+    Altitude: "",
+    Description: "",
+    Elevation: "",
+    Longitude: "",
+    Latitude: "",
+    LocationDeterminationMethod: "",
+    LocationType: ""
+  },
+  ENGINEERINGREVIEWREQUIREMENTS_FIELDS: {
+    RecordID: "",
+    Description: "",
+    EngineeringReviewType: "",
+    RequirementLevel: "",
+    StampType: ""
+  },
   CHOICE_FIELDS: {
     AHJ: {
       BuildingCode: [
-        {value: "", text: getBFormPlaceholder("BuildingCode", "select")},
+        {value: "", text: ""},
         {value: "2021IBC", text: "2021 IBC"},
         {value: "2018IBC", text: "2018 IBC"},
         {value: "2015IBC", text: "2015 IBC"},
@@ -18,7 +84,7 @@ export default {
         {value: "NoSolarRegulations", text: "No Solar Regulations"}
       ],
       ElectricCode: [
-        {value: "", text: getBFormPlaceholder("ElectricCode", "select")},
+        {value: "", text: ""},
         {value: "2020NEC", text: "2020 NEC"},
         {value: "2017NEC", text: "2017 NEC"},
         {value: "2014NEC", text: "2014 NEC"},
@@ -26,7 +92,7 @@ export default {
         {value: "NoSolarRegulations", text: "No Solar Regulations"}
       ],
       FireCode: [
-        {value: "", text: getBFormPlaceholder("FireCode", "select")},
+        {value: "", text: ""},
         {value: "2021IFC", text: "2021 IFC"},
         {value: "2018IFC", text: "2018 IFC"},
         {value: "2015IFC", text: "2015 IFC"},
@@ -35,7 +101,7 @@ export default {
         {value: "NoSolarRegulations", text: "No Solar Regulations"}
       ],
       ResidentialCode: [
-        {value: "", text: getBFormPlaceholder("ResidentialCode", "select")},
+        {value: "", text: ""},
         {value: "2021IRC", text: "2021 IRC"},
         {value: "2018IRC", text: "2018 IRC"},
         {value: "2015IRC", text: "2015 IRC"},
@@ -44,16 +110,22 @@ export default {
         {value: "NoSolarRegulations", text: "No Solar Regulations"}
       ],
       WindCode: [
-        {value: "", text: getBFormPlaceholder("WindCode", "select")},
-        {value: "ASCE7716", text: "ASCE7-16"},
-        {value: "ASCE7710", text: "ASCE7-10"},
-        {value: "ASCE7705", text: "ASCE7-05"},
+        {value: "", text: ""},
+        {value: "ASCE716", text: "ASCE7-16"},
+        {value: "ASCE710", text: "ASCE7-10"},
+        {value: "ASCE705", text: "ASCE7-05"},
         {value: "SpecialWindZone", text: "Special Wind Zone"},
+      ],
+      DocumentSubmissionMethod: [
+        {value: "", text: ""},
+        {value: "Epermitting", text: "Epermitting"},
+        {value: "Email", text: "Email"},
+        {value: "SolarApp", text: "SolarApp"}
       ]
     },
     Contact: {
       ContactType: [
-        {value: "", text: getBFormPlaceholder("ContactType", "select")},
+        {value: "", text: ""},
         {value: "Homeowner", text: "Homeowner"},
         {value: "OffTaker", text: "Off Taker"},
         {value: "Inspector", text: "Inspector"},
@@ -67,7 +139,7 @@ export default {
         {value: "Salesperson", text: "Salesperson"}
       ],
       PreferredContactMethod: [
-        {value: "", text: getBFormPlaceholder("PreferredContactMethod", "select")},
+        {value: "", text: ""},
         {value: "Email", text: "Email"},
         {value: "WorkPhone", text: "Work Phone"},
         {value: "CellPhone", text: "Cell Phone"},
@@ -77,7 +149,7 @@ export default {
     },
     Address: {
       AddressType: [
-        {value: "", text: getBFormPlaceholder("AddressType", "select")},
+        {value: "", text: ""},
         {value: "Mailing", text: "Mailing"},
         {value: "Billing", text: "Billing"},
         {value: "Installation", text: "Installation"},
@@ -86,7 +158,7 @@ export default {
     },
     Location: {
       LocationDeterminationMethod: [
-        {value: "", text: getBFormPlaceholder("LocationDeterminationMethod", "select")},
+        {value: "", text: ""},
         {value: "GPS", text: "GPS"},
         {value: "Survey", text: "Survey"},
         {value: "AerialImage", text: "Aerial Image"},
@@ -95,7 +167,7 @@ export default {
         {value: "Unknown", text: "Unknown"}
       ],
       LocationType: [
-        {value: "", text: getBFormPlaceholder("LocationType", "select")},
+        {value: "", text: ""},
         {value: "DeviceSpecific", text: "Device Specific"},
         {value: "SiteEntrance", text: "Site Entrance"},
         {value: "GeneralProximity", text: "General Proximity"},
@@ -104,7 +176,7 @@ export default {
     },
     EngineeringReviewRequirement: {
       EngineeringReviewType: [
-        {value: "", text: getBFormPlaceholder("EngineeringReviewType", "select")},
+        {value: "", text: ""},
         {value: "StructuralEngineer", text: "Structural Engineer"},
         {value: "ElectricalEngineer", text: "Electrical Engineer"},
         {value: "PVEngineer", text: "PV Engineer"},
@@ -113,7 +185,7 @@ export default {
         {value: "EnvironmentalEngineer", text: "Environmental Engineer"}
       ],
       RequirementLevel: [
-        {value: "", text: getBFormPlaceholder("RequirementLevel", "select")},
+        {value: "", text: ""},
         {value: "Required", text: "Required"},
         {value: "Optional", text: "Optional"},
         {value: "ConditionallyRequired", text: "Conditionally Required"}
@@ -128,11 +200,20 @@ export default {
   }
 };
 
-
-function getBFormPlaceholder(fieldName, type) {
-  if (type === "input") {
-    return "Enter a " + fieldName + "...";
-  } else if (type === "select") {
-    return "Select a " + fieldName + "...";
-  }
+function deepCopyObject(objectToCopy) {
+  let result = {};
+  Object.keys(objectToCopy).forEach(key => {
+    let field = objectToCopy[key];
+    if(typeof field === "object") {
+      result[key] = this.deepCopyObject(field);
+    } else if (field.constructor === Array) {
+      result[key] = [];
+      field.forEach(item => {
+        result[key].push(this.setAHJFieldsFromResponse(item));
+      });
+    } else {
+      result[key] = field;
+    }
+  });
+  return result;
 }

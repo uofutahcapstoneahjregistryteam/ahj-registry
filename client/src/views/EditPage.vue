@@ -105,7 +105,7 @@
                     >
                 <b-tabs card>
                   <b-tab title="Contact">
-                    <div v-for="Contact in AHJ.Contacts" :key=Contact.vueIndex>
+                    <div v-for="Contact in AHJ.Contacts">
                       <b-card-header header-tag="header" class="p-0" role="tab">
                         <b-button block v-b-toggle.accordion-1 variant="info">Contact Information</b-button>
                       </b-card-header>
@@ -188,9 +188,7 @@
                   <b-tabs card>
                     <b-tab v-for="i in tabsEngReqRev" :key="'dyn-tab-' + i" :title="'Engineering Review Requirement ' + i">
                       Tab contents {{ i }}
-                      <b-button size="sm" variant="danger" class="float-right" @click="closeTabEngReqReq(i)">
-                        Close tab
-                      </b-button>
+                      <b-button size="sm" variant="danger" class="float-right" @click="closeTabEngReqReq(i)">Remove</b-button>
                       <div v-for="(valueEngRevReq, nameEngRevReq) in AHJ.EngineeringReviewRequirements[i]" :key=nameEngRevReq>
                           <b-row>
                             <b-col>
@@ -247,25 +245,7 @@ export default {
       tabCounterContact: 0,
       tabsEngReqRev: [],
       tabCounterEngReqRev: 0,
-      AHJ: {
-        RecordID: "",
-        AHJName: "",
-        Description: "",
-        BuildingCode: "",
-        BuildingCodeNotes: "",
-        ElectricCode: "",
-        ElectricCodeNotes: "",
-        FireCode: "",
-        FireCodeNotes: "",
-        ResidentialCode: "",
-        ResidentialCodeNotes: "",
-        WindCode: "",
-        WindCodeNotes: "",
-        DocumentSubmissionMethod: "",
-        DocumentSubmissionMethodNotes: "",
-        FileFolderURL: "",
-        Address: null
-      },
+      AHJ: {},
       choiceFields: constants.CHOICE_FIELDS
     }
   },
@@ -279,11 +259,13 @@ export default {
   },
   methods: {
     validateEditAHJID() {
-      return /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/.test(this.editingRecordID);
+      return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/.test(this.editingRecordID);
     },
     initiateMode() {
       if (!this.mode) {
         return;
+      } else if (this.mode === 'create') {
+        this.AHJ = this.deepCopyObject(constants.AHJ_FIELDS);
       } else if (this.mode === 'update') {
         if (!this.validateEditAHJID()) {
           return;
@@ -295,7 +277,12 @@ export default {
     onSubmit(evt) {
       console.log('in onSubmit');
       evt.preventDefault();
-      this.postCreate("AHJ", this.AHJ);
+      if (this.mode === "create") {
+        this.postCreate("AHJ", this.AHJ);
+      } else if (this.mode === "update") {
+        console.log("in update");
+        this.postUpdate("AHJ", this.AHJ, this.AHJ["RecordID"], this.beforeEditAHJRecord);
+      }
     },
     onReset() {
 
@@ -305,21 +292,20 @@ export default {
     },
     getAHJRecord() {
       console.log('getting AHJ record...');
-      axios.get(this.$store.state.apiURL + "ahj/" + this.editingRecordID + "/", {
+      axios.get(this.$store.state.apiURL + "ahj/" + this.editingRecordID + "/?view=confirmed", {
         headers: {
           Authorization: this.$store.state.loginStatus.authToken
         }
       }).then(response => {
         console.log('got the AHJ record...');
         this.beforeEditAHJRecord = this.setAHJFieldsFromResponse(response.data);
-        this.AHJ = this.beforeEditAHJRecord;
+        this.AHJ = this.deepCopyObject(this.beforeEditAHJRecord);
       });
     },
     setAHJFieldsFromResponse(record) {
-      console.log(record);
       let result = {};
       Object.keys(record).forEach(key => {
-        console.log(key);
+        console.log(Object.keys(record));
         let field = record[key];
         if (field) {
           if ("Value" in field) {
@@ -328,14 +314,18 @@ export default {
               key = "RecordID";
             }
             result[key] = value;
-          } else if (field.constructor === Array) {
+          } else if (this.isArray(field)) {
             result[key] = [];
             field.forEach(item => {
+              console.log(' in array');
+              console.log(item);
               result[key].push(this.setAHJFieldsFromResponse(item));
             });
           } else {
             result[key] = this.setAHJFieldsFromResponse(record[key]);
           }
+        } else {
+          result[key] = field;
         }
       });
       return result;
@@ -356,62 +346,97 @@ export default {
       }).then(response => {
         console.log("response for " + RecordType + ": ");
         console.log(response)
+        console.log("fields");
+        console.log(fields);
         let RecordID = response.data["RecordID"];
-        fields["RecordID"] = RecordType;
+        fields["RecordID"] = RecordID;
         console.log(RecordID);
         this.postUpdate(RecordType, fields, RecordID);
       }).catch(error => {
         console.log(error);
       });
     },
-    postUpdate(RecordType, fields, RecordID) {
+    postUpdate(RecordType, fields, RecordID, beforeEditFields) {
+      console.log('in postUpdate');
+      console.log(fields);
       let updateEditObjects = [];
       Object.keys(fields).forEach(key => {
-        if(fields[key] === "" || fields[key] === null) {
-          return;
-          } else if (fields[key].constructor === Array) {
-          for(let i = 0; i < fields[key].length; i++) {
-            let subRecordID = fields[key][i]["RecordID"];
+        console.log('in update loop');
+        console.log(key);
+        if(fields[key]) {
+          if (this.isArray(fields[key])) {
+            console.log('in array for');
+            console.log(fields[key]);
+            let recordsToDelete = beforeEditFields[key].filter(item => {
+              let deleted = true;
+              for (let i = 0; i < fields[key].length; i++) {
+                if (item["RecordID"] === fields[key][i]["RecordID"]) {
+                  deleted = false;
+                }
+              }
+              return deleted;
+            });
+            recordsToDelete.forEach(record => this.postDelete(key, record["RecordID"]));
+            for (let i = 0; i < fields[key].length; i++) {
+              let subRecordID = fields[key][i]["RecordID"];
+              if (subRecordID) {
+                this.postUpdate(this.getSingularRecordType(key), fields[key][i], subRecordID, beforeEditFields[key][i]);
+              } else {
+                console.log('will create ' + key + ' from update');
+                this.postCreate(this.getSingularRecordType(key), fields[key][i], RecordID, RecordType);
+              }
+            }
+          } else if (this.isObject(fields[key])) {
+            console.log('in object for');
+            console.log(fields[key]);
+            let subRecordID = fields[key]["RecordID"];
             if (subRecordID) {
-              this.postUpdate(this.getSingularRecordType(key), fields[key][i], subRecordID);
+              this.postUpdate(key, fields[key], subRecordID, beforeEditFields[key]);
             } else {
               console.log('will create ' + key + ' from update');
-              this.postCreate(this.getSingularRecordType(key), fields[key][i], RecordID, RecordType);
+              this.postCreate(key, fields[key], RecordID, RecordType);
             }
-          }
-        } else if (typeof fields[key] === "object") {
-          let subRecordID = fields[key]["RecordID"];
-          if (subRecordID) {
-            this.postUpdate(key, fields[key], subRecordID);
-          } else {
-            console.log('will create ' + key + ' from update');
-            this.postCreate(key, fields[key], RecordID, RecordType);
-          }
-        } else {
-          if (key === "RecordID") {
+          } else if(key === "RecordID" || fields[key] === ""
+            || (this.mode === "update" && beforeEditFields ? this.checkEditMade(fields, beforeEditFields, key) : false)) {
+              console.log(fields[key]);
+              console.log('skipped');
             return;
+          } else {
+            console.log('in else for');
+            console.log(fields[key]);
+            let updateEditObject = {"EditType": "update", "RecordType": RecordType, "RecordID": RecordID};
+            updateEditObject["FieldName"] = key;
+            updateEditObject["Value"] = fields[key];
+            updateEditObjects.push(updateEditObject);
           }
-          let updateEditObject = {"EditType": "update", "RecordType": RecordType, "RecordID": RecordID};
-          updateEditObject["FieldName"] = key;
-          updateEditObject["Value"] = fields[key];
-          updateEditObjects.push(updateEditObject);
-          console.log(updateEditObject);
-          console.log(updateEditObjects);
         }
       });
-      for (let i = 0; i < updateEditObjects.length; i++) {
-        axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, updateEditObjects[i],
-          {
-          headers: {
-            Authorization: this.$store.state.loginStatus.authToken
-          }
-        }).then(response => {
-          
-        }).catch(error => {
-          this.statusMessage = "Failed to update AHJ information.";
-          this.showStatusModal = true;
-        });
-      }
+      console.log(updateEditObjects);
+      axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, updateEditObjects,
+        {
+        headers: {
+          Authorization: this.$store.state.loginStatus.authToken
+        }
+      }).then(response => {
+        
+      }).catch(error => {
+        this.statusMessage = "Failed to update AHJ information.";
+        this.showStatusModal = true;
+      });
+    },
+    postDelete(RecordType, RecordID) {
+      let deleteEditObject = {RecordType: RecordType, RecordID: RecordID};
+      axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, deleteEditObject,
+        {
+        headers: {
+          Authorization: this.$store.state.loginStatus.authToken
+        }
+      }).then(response => {
+        
+      }).catch(error => {
+        this.statusMessage = "Failed to update AHJ information.";
+        this.showStatusModal = true;
+      });
     },
     getSingularRecordType(name) {
       if (name === "Contacts") {
@@ -421,59 +446,16 @@ export default {
       }
     },
     addContact() {
-      this.AHJ.Contacts.push({
-        RecordID: "",
-        ContactTimezone: "",
-        ContactType: "",
-        Description: "",
-        Email: "",
-        FirstName: "",
-        MiddleName: "",
-        LastName: "",
-        MobilePhone: "",
-        WorkPhone: "",
-        HomePhone: "",
-        Title: "",
-        PreferredContactMethod: "",
-        Address: null
-      });
+      this.AHJ.Contacts.push(this.deepCopyObject(constants.CONTACT_FIELDS));
     },
     addAddress(parent) {
-      parent["Address"] = {
-        RecordID: "",
-        AddrLine1: "",
-        AddrLine2: "",
-        AddrLine3: "",
-        AddressType: "",
-        City: "",
-        Country: "",
-        County: "",
-        Description: "",
-        StateProvince: "",
-        ZipPostalCode: "",
-        Location: null
-      };
+      parent["Address"] = this.deepCopyObject(constants.ADDRESS_FIELDS);
     },
     addLocation(parent) {
-      parent["Location"] = {
-        RecordID: "",
-        Altitude: "",
-        Description: "",
-        Elevation: "",
-        Longitude: "",
-        Latitude: "",
-        LocationDeterminationMethod: "",
-        LocationType: ""
-      };
+      parent["Location"] = this.deepCopyObject(constants.LOCATION_FIELDS);
     },
     addEngRevReq() {
-      this.AHJ.EngineeringReviewRequirements.push({
-        RecordID: "",
-        Description: "",
-        EngineeringReviewType: "",
-        RequirementLevel: "",
-        StampType: ""
-      });
+      this.AHJ.EngineeringReviewRequirements.push(this.deepCopyObject(constants.ENGINEERINGREVIEWREQUIREMENTS_FIELDS));
     },
     newTabEngRevReq() {
       this.addEngRevReq();
@@ -485,11 +467,44 @@ export default {
           this.AHJ.EngineeringReviewRequirements.splice(i, 1);
           this.tabsEngReqRev.splice(i, 1);
         }
+        for (let i = 0; i < this.tabsEngReqRev.length; i++) {
+          this.tabsEngReqRev[i] = i;
+        }
+        this.tabCounterEngReqRev = this.tabsEngReqRev.length;
       }
-      this.tabCounterEngReqRev--;
+    },
+    deepCopyObject(objectToCopy) {
+      let result = {};
+      Object.keys(objectToCopy).forEach(key => {
+        let field = objectToCopy[key];
+        if (field) {
+          if (this.isArray(field)) {
+            result[key] = [];
+            field.forEach(item => {
+              result[key].push(this.setAHJFieldsFromResponse(item));
+            });
+          } else if(this.isObject(field)) {
+            result[key] = this.deepCopyObject(field);
+          } else {
+            result[key] = field;
+          }
+        } else {
+          result[key] = field;
+        }
+      });
+      return result;
+    },
+    checkEditMade(before, after, field) {
+      return before[field] === after[field]
+    },
+    isArray(item) {
+      return item.constructor === Array;
+    },
+    isObject(item) {
+      return typeof item === "object";
     },
     checkObjectOrArray(item) {
-      return typeof item === 'object' || item.constructor === Array;
+      return this.isObject(item) || this.isArray(item);
     },
     getBFormInputPlaceholder(fieldName) {
       return "Enter a " + fieldName + "...";
@@ -499,13 +514,11 @@ export default {
 </script>
 
 <style scoped>
-
 .container {
   height: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 54px 1fr 50px;
-  background-color: #f7f7f7;
 }
 
 .card {

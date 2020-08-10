@@ -157,7 +157,7 @@ export default new Vuex.Store({
           .then(response => {
             let resultsStringified = "";
             for(let i = 0; i < response.data.results.length; i++) {
-              resultsStringified += JSON.stringify(response.data.results[i], null, 4) + "\n";
+              resultsStringified += JSON.stringify(response.data.results[i], null, 2) + "\n";
             }
             let jsonFileToExport = new Blob(
               [resultsStringified],

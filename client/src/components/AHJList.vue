@@ -198,8 +198,6 @@ export default {
   },
   computed: {
     apiData() {
-      console.log("AHJ List API DATA:");
-      console.log(this.$store.state.apiData);
       return this.$store.state.apiData;
     },
     apiLoading() {
