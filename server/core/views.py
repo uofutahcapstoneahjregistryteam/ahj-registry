@@ -196,6 +196,7 @@ def activate(request, uidb64, token):
         user = User.objects.get(pk=uid)
         if user.is_active:
             user = None
+            message = 'Success'
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
         message = 'User not found.'
@@ -212,6 +213,7 @@ def set_edit_status_email(request, uidb64, token, edit_id):
         uid = force_text(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
         edit = Edit.objects.get(pk=edit_id)
+        message = 'Success'
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         edit = None
         user = None
