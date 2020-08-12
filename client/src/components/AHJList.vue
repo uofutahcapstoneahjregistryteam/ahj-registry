@@ -2,17 +2,14 @@
   <div class="ahj-public-list-container">
     <component-pagination class="pagination" id="top-buttons"></component-pagination>
     <div class="ahj-public-list">
-      <b-table
-        class="ahj-table"
-        striped
-        hover
-        outlined
-        small
-        :fields="fields"
-        :items="apiData.results"
-        :busy="apiLoading"
-      >
+      <b-table ref="selectableTable" class="ahj-table" selectable :select-mode="'single'" @row-selected="onRowSelected" striped hover outlined small :fields="fields" :items="apiData.results" :busy="apiLoading">
         <template v-slot:table-busy>
+          <div class="text-center text-primary my-2">
+            <b-spinner class="align-middle"></b-spinner>
+            <strong>&nbsp; Loading...</strong>
+          </div>
+        </template>
+        <template v-slot:row-details>
           <div class="text-center text-primary my-2">
             <b-spinner class="align-middle"></b-spinner>
             <strong>&nbsp; Loading...</strong>
@@ -21,23 +18,24 @@
       </b-table>
     </div>
     <component-pagination class="pagination" id="bottom-buttons"></component-pagination>
+    <b-modal size="xl" v-model="showEditPageModal">
+      <template v-slot:modal-footer>
+      <b-button size="sm" variant="primary" @click="$refs.editpage.onSubmit(); showEditPageModal = false; $store.commit('callAPI');">Submit</b-button>
+      <b-button size="sm" variant="danger" @click="showEditPageModal = false">Cancel</b-button>
+    </template>
+      <component-edit-page ref="editpage" :mode="editPageMode" :editingRecordID="selectedAHJ"></component-edit-page>
+    </b-modal>
   </div>
 </template>
 
 <script>
 import Pagination from "./Pagination.vue";
+import EditPage from "./EditPage.vue";
 export default {
   props: ["admin_page"],
   data() {
     return {
       fields: [
-        {
-          key: "AHJID.Value",
-          label: "AHJ ID",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
         {
           key: "AHJName.Value",
           label: "AHJ Name",
@@ -188,8 +186,18 @@ export default {
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
-        }
-      ]
+        },
+        {
+          key: "AHJID.Value",
+          label: "AHJ ID",
+          thStyle: { width: "274px" },
+          class: "text-center",
+          thClass: ".col-field-styling"
+        },
+      ],
+      selectedAHJ: [],
+      editPageMode: "",
+      showEditPageModal: false
     };
   },
   beforeCreate() {
@@ -214,9 +222,24 @@ export default {
     },
     dataReady() {
       return this.$store.state.dataReady;
+    },
+    getEditPageMode() {
+      return this.editPageMode;
     }
   },
   methods: {
+    onRowSelected(items) {
+      this.editPageMode = "update";
+      this.showEditPageModal = true;
+      this.selectedAHJ = items[0].AHJID.Value;
+      console.log(this.$refs.selectableTable);
+      for (let i = 0; i < this.$refs.selectableTable.selectedRows.length; i++) {
+        if (this.$refs.selectableTable.selectedRows[i]) {
+          this.$refs.selectableTable.selectedRows[i] = false;
+          return;
+        }
+      }  
+    },
     ahjCodeFormatter(value) {
       if(value)
         return value.substring(0, 4) + " " + value.substring(4);
@@ -233,12 +256,16 @@ export default {
     }
   },
   components: {
-    "component-pagination": Pagination
-  }
+    "component-pagination": Pagination,
+    "component-edit-page": EditPage
+  },
 };
 </script>
 
 <style>
+modal-content {
+  width: 200%;
+}
 .btn {
   margin: 5px;
 }

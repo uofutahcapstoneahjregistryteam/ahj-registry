@@ -41,9 +41,9 @@ export default {
         });
         if(this.$store.state.loginStatus["status"] === "success") {
           if(this.$store.state.loginStatus["isSuper"]) {
-            this.$router.push({ name: "edit" });
+            this.$router.push({ name: "ahj-search" });
           } else {
-            this.$router.push({name: "edit"});
+            this.$router.push({name: "ahj-search"});
           }
         } else {
           this.$router.push({name: "login"});

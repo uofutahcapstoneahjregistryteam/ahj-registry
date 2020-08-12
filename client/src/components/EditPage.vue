@@ -1,22 +1,8 @@
 <template>
   <b-container>
-    <b-modal id="mode-modal" title="Edit Mode" v-model="showModeModal">
-      <template v-slot:modal-footer>
-        <b-button variant="primary" @click="initiateMode">OK</b-button>
-      </template>
-      <b-form>
-        <b-form-group id="export-form-filename" label="Select a mode:" label-for="export-input-filename">
-          <b-form-select :options="modes" v-model="mode" required />
-        </b-form-group>
-        <b-form-group v-if="mode === 'update'" id="choose-edit-record" label="Record to edit:">
-          <b-form-input placeholder="Place enter an AHJID..." v-model="editingRecordID" :state="validateEditAHJID()" required />
-        </b-form-group>
-      </b-form>
-  </b-modal>
     <b-row>
       <b-col>
         <b-form @submit="onSubmit" @reset="onReset">
-          <b-card no-body>
             <b-tabs card>
               <b-tab title="AHJ" active>
                   <b-form-group
@@ -211,8 +197,7 @@
                 </b-form-group>
               </b-tab>
             </b-tabs>
-          </b-card>
-          <b-button variant="primary" class="float-right" @click="onSubmit">Submit</b-button>
+          <!-- <b-button variant="primary" class="float-right" @click="onSubmit">Submit</b-button> -->
         </b-form>
       </b-col>
     </b-row>
@@ -224,11 +209,13 @@ import axios from "axios";
 import constants from "../constants.js";
 
 export default {
+  props: [
+    'mode',
+    'editingRecordID'
+  ],
   data() {
     return {
-      showModeModal: true,
-      mode: "update",
-      editingRecordID: "",
+      previousAPIURLAddon: "",
       beforeEditAHJRecord: {},
 
       showStatusModal: false,
@@ -243,34 +230,41 @@ export default {
       choiceFields: constants.CHOICE_FIELDS
     }
   },
-  beforeCreate() {
-    this.$store.commit("setApiUrlAddon", "edit/submit/");
-  },
   mounted() {
+    this.previousAPIURLAddon = this.$store.state.apiURLAddon;
+    this.$store.commit("setApiUrlAddon", "edit/submit/");
     if(this.$store.state.loginStatus["status"] !== "success") {
       this.$router.replace({ name: "login" });
     }
+    this.initiateMode();
+  },
+  beforeDestroy() {
+    console.log('in before destroy');
+    this.$store.commit("setApiUrlAddon", this.previousAPIURLAddon);
   },
   methods: {
     validateEditAHJID() {
       return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/.test(this.editingRecordID);
     },
     initiateMode() {
+      console.log('in initiate');
+      console.log('mode: ' + this.mode);
       if (!this.mode) {
+        console.log('no mode')
         return;
       } else if (this.mode === 'create') {
         this.AHJ = this.deepCopyObject(constants.AHJ_FIELDS);
       } else if (this.mode === 'update') {
+        console.log('in update');
         if (!this.validateEditAHJID()) {
+          console.log('failed uuid validation');
           return;
         }
         this.getAHJRecord();
       }
-      this.showModeModal = false;
     },
-    onSubmit(evt) {
+    onSubmit() {
       console.log('in onSubmit');
-      evt.preventDefault();
       if (this.mode === "create") {
         this.postCreate("AHJ", this.AHJ);
       } else if (this.mode === "update") {
@@ -280,9 +274,6 @@ export default {
     },
     onReset() {
 
-    },
-    show() {
-      
     },
     getAHJRecord() {
       console.log('getting AHJ record...');
@@ -561,18 +552,18 @@ export default {
 </script>
 
 <style scoped>
-.container {
+/* .container {
   height: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 54px 1fr 50px;
-}
+} */
 
-.card {
+/* .card {
   margin-top: 25px;
   height: 750px;
-  width: 200%;
+  width: 100%;
   border: #d3d3d3 solid 1px;
   overflow-y: auto;
-}
+} */
 </style>
