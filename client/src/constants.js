@@ -193,10 +193,10 @@ export default {
         {value: "ConditionallyRequired", text: "Conditionally Required"}
       ],
       StampType: [
+        {value: "", text: ""},
         {value: "Wet", text: "Wet"},
         {value: "Digital", text: "Digital"},
-        {value: "Notary", text: "Notary"},
-        {value: "None", text: "None"}
+        {value: "Notary", text: "Notary"}
       ]
     }
   }

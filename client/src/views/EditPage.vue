@@ -141,8 +141,8 @@
                               </b-col>
                               <b-col cols="8">
                                 <label v-if="nameContactAddress === 'RecordID'">{{ valueContactAddress }}</label>
-                                <b-form-select v-else-if="choiceFields.Contact[nameContactAddress]" v-model="AHJ.Contacts[i][nameContactAddress]" :options="choiceFields.Contact[nameContactAddress]" />
-                                <b-form-input v-else v-model="AHJ.Contacts[i][nameContactAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddress)" />
+                                <b-form-select v-else-if="choiceFields.Address[nameContactAddress]" v-model="AHJ.Contacts[i].Address[nameContactAddress]" :options="choiceFields.Address[nameContactAddress]" />
+                                <b-form-input v-else v-model="AHJ.Contacts[i].Address[nameContactAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddress)" />
                                   </b-col>
                                 </b-row>
                               </div>
@@ -372,7 +372,7 @@ export default {
         let field = fields[key];
         console.log('in update loop');
         console.log(key);
-        if(field) {
+        if(field !== null) {
           if (this.isArray(field)) {
             console.log('in array for');
             console.log(field);
@@ -398,7 +398,7 @@ export default {
               console.log('will create ' + key + ' from update');
               this.postCreate(key, field, RecordID, RecordType);
             }
-          } else if(key === "RecordID" || field === ""
+          } else if(key === "RecordID" || (this.mode === "create" ? field === "" : false)
             || (this.mode === "update" && beforeEditFields ? this.checkEditMade(fields, beforeEditFields, key) : false)) {
               console.log(field);
               console.log('skipped');
@@ -414,17 +414,19 @@ export default {
         }
       });
       console.log(updateEditObjects);
-      axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, updateEditObjects,
-        {
-        headers: {
-          Authorization: this.$store.state.loginStatus.authToken
-        }
-      }).then(response => {
-        
-      }).catch(error => {
-        this.statusMessage = "Failed to update AHJ information.";
-        this.showStatusModal = true;
-      });
+      if (updateEditObjects.length > 0) {
+        axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, updateEditObjects,
+          {
+          headers: {
+            Authorization: this.$store.state.loginStatus.authToken
+          }
+        }).then(response => {
+          
+        }).catch(error => {
+          this.statusMessage = "Failed to update AHJ information.";
+          this.showStatusModal = true;
+        });
+      }
     },
     deleteRemovedRecordsInArray(key, field, beforeEditFields) {
       let recordsToDelete = beforeEditFields[key].filter(item => {
