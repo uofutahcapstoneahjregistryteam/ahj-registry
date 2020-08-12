@@ -212,6 +212,8 @@ def process_edit_creation(edit_data, user):
         elif edit.EditType == 'update':
             if edit.RecordID == '':
                 return {'detail': 'No record ID was given'}, status.HTTP_400_BAD_REQUEST
+            if edit.get_record() is None:
+                return {'detail': 'Record not found'}, status.HTTP_404_NOT_FOUND
             if not edit.validate_FieldName():
                 return {'detail': 'Invalid field name.'}, status.HTTP_400_BAD_REQUEST
             if edit.Value == '':
@@ -224,6 +226,8 @@ def process_edit_creation(edit_data, user):
             if edit.Value == edit.PreviousValue:
                 return {'detail': 'This edit has the same value as the record'}, status.HTTP_400_BAD_REQUEST
         elif edit.EditType == 'delete':
+            if edit.get_record() is None:
+                return {'detail': 'Record not found'}, status.HTTP_404_NOT_FOUND
             if not check_record_edit_create_confirmed(edit.get_record()):
                 return {'detail': 'Cannot make delete request records awaiting confirmation'}, status.HTTP_403_FORBIDDEN
         else:

@@ -48,7 +48,7 @@ def ahj_upload(request):
 @api_view(['GET'])
 def get_ahj_history(request, pk):
     if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
     try:
         ahj = AHJ.objects.get(pk=pk)
     except AHJ.DoesNotExist:
@@ -59,21 +59,21 @@ def get_ahj_history(request, pk):
 @api_view(['POST'])
 def submit_edit(request):
     if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
     return create_edit(request)
 
 
 @api_view(['GET'])
 def edit_detail(request, pk):
     if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
     return set_edit(request, pk)
 
 
 @api_view(['GET'])
 def owner_to_ahj(request):
     if request.auth is None:
-        return Response(request.detail, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
     if not request.user.is_superuser:
         return Response('Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
     mode = request.GET.get('mode')

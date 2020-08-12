@@ -23,7 +23,9 @@ export default {
     DocumentSubmissionMethod: "",
     DocumentSubmissionMethodNotes: "",
     FileFolderURL: "",
-    Address: null
+    Address: null,
+    Contacts: [],
+    EngineeringReviewRequirements: []
   },
   CONTACT_FIELDS: {
     RecordID: "",

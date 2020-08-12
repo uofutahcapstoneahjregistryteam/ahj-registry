@@ -99,85 +99,87 @@
                   </b-form-group>
               </b-tab>
               <b-tab title="Contacts">
-                <b-form-group
-                      id="input-group-1"
-                      label-for="input-1"
-                    >
-                <b-tabs card>
-                  <b-tab title="Contact">
-                    <div v-for="Contact in AHJ.Contacts">
+                <b-form-group id="input-group-1" label-for="input-1">
+                  <b-tabs card>
+                    <b-tab v-for="i in tabsContact" :key="'dyn-tab-' + i" :title="'Contact ' + i">
+                      Contact {{ i }}
+                      <b-button size="sm" variant="danger" class="float-right" @click="closeTabContact(i)">Remove</b-button>
                       <b-card-header header-tag="header" class="p-0" role="tab">
-                        <b-button block v-b-toggle.accordion-1 variant="info">Contact Information</b-button>
+                        <b-button block v-b-toggle.accordion-4 variant="info">Contact Information</b-button>
                       </b-card-header>
-                      <b-collapse id="accordion-1" visible accordion="my-accordion-contact" role="tabpanel">
-                        <div v-for="(valueContact, nameContact) in Contact" :key=nameContact>
+                      <b-collapse id="accordion-4" visible accordion="my-accordion-contact" role="tabpanel">
+                        <b-card-body>
+                          <div v-for="(valueContact, nameContact) in AHJ.Contacts[i]" :key=nameContact>
+                            <b-row v-if="!checkObjectOrArray(valueContact) && (mode === 'create' ? nameContact !== 'RecordID' : true)">
+                              <b-col cols="4">
+                                <label>{{ nameContact }}:</label>
+                              </b-col>
+                              <b-col cols="8">
+                                <label v-if="nameContact === 'RecordID'">{{ AHJ.Contacts[i][nameContact] }}</label>
+                                <b-form-select v-else-if="choiceFields.Contact[nameContact]" v-model="AHJ.Contacts[i][nameContact]" :options="choiceFields.Contact[nameContact]" />
+                                <b-form-input v-else v-model="AHJ.Contacts[i][nameContact]" type="text" :placeholder="getBFormInputPlaceholder(nameContact)" />
+                              </b-col>
+                            </b-row>
+                          </div>
                           <b-row>
                             <b-col>
-                              <label>{{ nameContact }}:</label>
-                            </b-col>
-                            <b-col>
-                              <label v-if="nameContact === 'RecordID'">{{ Contact[nameContact] }}</label>
-                              <b-form-input
-                                v-else-if="nameContact !== 'Address'"
-                                v-model="Contact[nameContact]"
-                                type="text"
-                                :placeholder="'Enter ' + nameContact"
-                              ></b-form-input>
-                                <b-button v-if="nameContact === 'Address' && Contact.Address === null" @click="addAddress(Contact)">Add Address</b-button>
+                              <b-button v-if="AHJ.Contacts[i].Address === null" @click="addAddress(AHJ.Contacts[i])">Add Address</b-button>
                             </b-col>
                           </b-row>
-                        </div>
+                        </b-card-body>
                       </b-collapse>
-                      <div v-if="Contact.Address">
+                      <div v-if="AHJ.Contacts[i].Address">
                         <b-card-header header-tag="header" class="p-0" role="tab">
-                          <b-button block v-b-toggle.accordion-2 variant="info">Address</b-button>
+                          <b-button block v-b-toggle.accordion-5 variant="info">Address</b-button>
                         </b-card-header>
-                        <b-collapse id="accordion-2" accordion="my-accordion-contact" role="tabpanel">
-                          <div v-for="(valueContactAddress, nameContactAddress) in Contact.Address" :key=nameContactAddress>
-                            <b-row>
-                              <b-col>
+                        <b-collapse id="accordion-5" accordion="my-accordion-contact" role="tabpanel">
+                          <b-card-body>
+                          <div v-for="(valueContactAddress, nameContactAddress) in AHJ.Contacts[i].Address" :key=nameContactAddress>
+                            <b-row v-if="!checkObjectOrArray(valueContactAddress) && (mode === 'create' ? nameContactAddress !== 'RecordID' : true)">
+                              <b-col cols="4">
                                 <label>{{ nameContactAddress }}:</label>
                               </b-col>
-                              <b-col>
-                                <label v-if="nameContactAddress === 'RecordID'">{{ Contact[nameContactAddress] }}</label>
-                                <b-form-input
-                                  v-else-if="nameContactAddress !== 'Location'"
-                                  v-model="Contact.Address[nameContactAddress]"
-                                  type="text"
-                                  :placeholder="'Enter ' + nameContactAddress"
-                              ></b-form-input>
-                                <b-button v-if="nameContactAddress === 'Address' && Contact.Address === null" @click="addLocation(Contact.Address)">Add Location</b-button>
-                              </b-col>
-                            </b-row>
-                          </div>
+                              <b-col cols="8">
+                                <label v-if="nameContactAddress === 'RecordID'">{{ valueContactAddress }}</label>
+                                <b-form-select v-else-if="choiceFields.Contact[nameContactAddress]" v-model="AHJ.Contacts[i][nameContactAddress]" :options="choiceFields.Contact[nameContactAddress]" />
+                                <b-form-input v-else v-model="AHJ.Contacts[i][nameContactAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddress)" />
+                                  </b-col>
+                                </b-row>
+                              </div>
+                              <b-row>
+                                <b-col>
+                                  <b-button v-if="AHJ.Contacts[i].Address.Location === null" @click="addLocation(AHJ.Contacts[i].Address)">Add Location</b-button>
+                                </b-col>
+                              </b-row>
+                          </b-card-body>
                         </b-collapse>
                       </div>
-                      <div v-if="Contact.Address && Contact.Address.Location">
+                      <div v-if="AHJ.Contacts[i].Address && AHJ.Contacts[i].Address.Location">
                         <b-card-header header-tag="header" class="p-0" role="tab">
-                          <b-button block v-b-toggle.accordion-3 variant="info">Location</b-button>
+                          <b-button block v-b-toggle.accordion-6 variant="info">Location</b-button>
                         </b-card-header>
-                        <b-collapse id="accordion-3" accordion="my-accordion-contact" role="tabpanel">
-                          <div v-for="(valueContactAddressLocation, nameContactAddressLocation) in Contact.Address.Location" :key=nameContactAddressLocation>
-                            <b-row>
-                              <b-col>
-                                <label>{{ nameContactAddressLocation }}:</label>
-                              </b-col>
-                              <b-col>
-                                <label v-if="nameContactAddressLocation === 'RecordID'">{{ Contact.Address.Location[nameContactAddressLocation] }}</label>
-                                <b-form-input
-                                  v-else
-                                  v-model="Contact.Address.Location[nameContactAddressLocation]"
-                                  type="text"
-                                  :placeholder="'Enter ' + nameContactAddressLocation"
-                              ></b-form-input>
-                              </b-col>
-                            </b-row>
-                          </div>
+                        <b-collapse id="accordion-6" accordion="my-accordion-contact" role="tabpanel">
+                          <b-card-body>
+                            <div v-for="(valueContactAddressLocation, nameContactAddressLocation) in AHJ.Contacts[i].Address.Location" :key=nameContactAddressLocation>
+                              <b-row v-if="mode === 'create' ? nameContactAddressLocation !== 'RecordID' : true">
+                                <b-col cols="4">
+                                  <label>{{ nameContactAddressLocation }}:</label>
+                                </b-col>
+                                <b-col cols="8">
+                                  <label v-if="nameContactAddressLocation === 'RecordID'">{{ valueContactAddressLocation }}</label>
+                                  <b-form-select v-else-if="choiceFields.Location[nameContactAddressLocation]" v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" :options="choiceFields.Location[nameContactAddressLocation]" />
+                                  <b-form-input v-else v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddressLocation)" />
+                                </b-col>
+                              </b-row>
+                            </div>
+                          </b-card-body>
                         </b-collapse>
                       </div>
-                    </div>
-                  </b-tab>
-                </b-tabs>
+                    </b-tab>
+                    <template v-slot:tabs-end>
+                      <b-nav-item role="presentation" @click.prevent="newTabContact" href="#"><b>+</b></b-nav-item>
+                    </template>
+                  </b-tabs>
                 </b-form-group>
               </b-tab>
               <b-tab title="Engineering Review Requirements">
@@ -190,21 +192,17 @@
                       Tab contents {{ i }}
                       <b-button size="sm" variant="danger" class="float-right" @click="closeTabEngReqReq(i)">Remove</b-button>
                       <div v-for="(valueEngRevReq, nameEngRevReq) in AHJ.EngineeringReviewRequirements[i]" :key=nameEngRevReq>
-                          <b-row>
-                            <b-col>
-                              <label>{{ nameEngRevReq }}:</label>
-                            </b-col>
-                            <b-col>
-                              <label v-if="nameEngRevReq === 'RecordID'">{{ AHJ.EngineeringReviewRequirements[i][nameEngRevReq] }}</label>
-                              <b-form-input
-                                v-else-if="nameEngRevReq !== 'Address'"
-                                v-model="AHJ.EngineeringReviewRequirements[i][nameEngRevReq]"
-                                type="text"
-                                :placeholder="'Enter ' + nameEngRevReq"
-                              ></b-form-input>
-                            </b-col>
-                          </b-row>
-                        </div>
+                        <b-row v-if="mode === 'create' ? nameEngRevReq !== 'RecordID' : true">
+                          <b-col cols="4">
+                            <label>{{ nameEngRevReq }}:</label>
+                          </b-col>
+                          <b-col cols="8">
+                            <label v-if="nameEngRevReq === 'RecordID'">{{ AHJ.EngineeringReviewRequirements[i][nameEngRevReq] }}</label>
+                            <b-form-select v-else-if="choiceFields.EngineeringReviewRequirement[nameEngRevReq]" v-model="AHJ.EngineeringReviewRequirements[i][nameEngRevReq]" :options="choiceFields.EngineeringReviewRequirement[nameEngRevReq]" />
+                            <b-form-input v-else v-model="AHJ.EngineeringReviewRequirements[i][nameEngRevReq]" type="text" :placeholder="getBFormInputPlaceholder(nameEngRevReq)" />
+                          </b-col>
+                        </b-row>
+                      </div>
                     </b-tab>
                     <template v-slot:tabs-end>
                       <b-nav-item role="presentation" @click.prevent="newTabEngRevReq" href="#"><b>+</b></b-nav-item>
@@ -228,12 +226,8 @@ import constants from "../constants.js";
 export default {
   data() {
     return {
-      modes: [
-        { value: "create", text: "Submit a new AHJ..."},
-        { value: "update", text: "Edit an existing AHJ..."}
-      ],
       showModeModal: true,
-      mode: "",
+      mode: "update",
       editingRecordID: "",
       beforeEditAHJRecord: {},
 
@@ -300,15 +294,28 @@ export default {
         console.log('got the AHJ record...');
         this.beforeEditAHJRecord = this.setAHJFieldsFromResponse(response.data);
         this.AHJ = this.deepCopyObject(this.beforeEditAHJRecord);
+        this.setTabCounts();
       });
+    },
+    setTabCounts() {
+      this.tabCounterContact = this.AHJ.Contacts.length;
+      for (let i = 0; i < this.tabCounterContact; i++) {
+        this.tabsContact.push(i);
+      }
+      this.tabCounterEngReqRev = this.AHJ.EngineeringReviewRequirements.length;
+      for (let i = 0; i < this.tabCounterEngReqRev; i++) {
+        this.tabsEngReqRev.push(i);
+      }
     },
     setAHJFieldsFromResponse(record) {
       let result = {};
+      console.log(record);
       Object.keys(record).forEach(key => {
         console.log(Object.keys(record));
         let field = record[key];
         if (field) {
-          if ("Value" in field) {
+          if (field.hasOwnProperty("Value")) {
+            console.log('in value');
             let value = field["Value"];
             if (value && field["RecordID"] === value) {
               key = "RecordID";
@@ -322,6 +329,7 @@ export default {
               result[key].push(this.setAHJFieldsFromResponse(item));
             });
           } else {
+            console.log('in object');
             result[key] = this.setAHJFieldsFromResponse(record[key]);
           }
         } else {
@@ -332,7 +340,7 @@ export default {
     },
     postCreate(RecordType, fields, ParentID, ParentRecordType) {
       console.log('in postCreate for ' + RecordType);
-      let createEditObject = {"EditType": "create", "RecordType": RecordType}
+      let createEditObject = {EditType: "create", RecordType: RecordType}
       if (ParentID && ParentRecordType) {
         createEditObject["ParentID"] = ParentID;
         createEditObject["ParentRecordType"] = ParentRecordType;
@@ -345,7 +353,7 @@ export default {
           }
       }).then(response => {
         console.log("response for " + RecordType + ": ");
-        console.log(response)
+        console.log(response);
         console.log("fields");
         console.log(fields);
         let RecordID = response.data["RecordID"];
@@ -361,52 +369,46 @@ export default {
       console.log(fields);
       let updateEditObjects = [];
       Object.keys(fields).forEach(key => {
+        let field = fields[key];
         console.log('in update loop');
         console.log(key);
-        if(fields[key]) {
-          if (this.isArray(fields[key])) {
+        if(field) {
+          if (this.isArray(field)) {
             console.log('in array for');
-            console.log(fields[key]);
-            let recordsToDelete = beforeEditFields[key].filter(item => {
-              let deleted = true;
-              for (let i = 0; i < fields[key].length; i++) {
-                if (item["RecordID"] === fields[key][i]["RecordID"]) {
-                  deleted = false;
-                }
-              }
-              return deleted;
-            });
-            recordsToDelete.forEach(record => this.postDelete(key, record["RecordID"]));
-            for (let i = 0; i < fields[key].length; i++) {
-              let subRecordID = fields[key][i]["RecordID"];
+            console.log(field);
+            if (this.mode === "update" && beforeEditFields) {
+              this.deleteRemovedRecordsInArray(key, field, beforeEditFields);
+            }
+            for (let i = 0; i < field.length; i++) {
+              let subRecordID = field[i]["RecordID"];
               if (subRecordID) {
-                this.postUpdate(this.getSingularRecordType(key), fields[key][i], subRecordID, beforeEditFields[key][i]);
+                this.postUpdate(this.getSingularRecordType(key), field[i], subRecordID, beforeEditFields[key][i]);
               } else {
                 console.log('will create ' + key + ' from update');
-                this.postCreate(this.getSingularRecordType(key), fields[key][i], RecordID, RecordType);
+                this.postCreate(this.getSingularRecordType(key), field[i], RecordID, RecordType);
               }
             }
-          } else if (this.isObject(fields[key])) {
+          } else if (this.isObject(field)) {
             console.log('in object for');
-            console.log(fields[key]);
-            let subRecordID = fields[key]["RecordID"];
+            console.log(field);
+            let subRecordID = field["RecordID"];
             if (subRecordID) {
-              this.postUpdate(key, fields[key], subRecordID, beforeEditFields[key]);
+              this.postUpdate(key, field, subRecordID, beforeEditFields[key]);
             } else {
               console.log('will create ' + key + ' from update');
-              this.postCreate(key, fields[key], RecordID, RecordType);
+              this.postCreate(key, field, RecordID, RecordType);
             }
-          } else if(key === "RecordID" || fields[key] === ""
+          } else if(key === "RecordID" || field === ""
             || (this.mode === "update" && beforeEditFields ? this.checkEditMade(fields, beforeEditFields, key) : false)) {
-              console.log(fields[key]);
+              console.log(field);
               console.log('skipped');
             return;
           } else {
             console.log('in else for');
-            console.log(fields[key]);
-            let updateEditObject = {"EditType": "update", "RecordType": RecordType, "RecordID": RecordID};
+            console.log(field);
+            let updateEditObject = {EditType: "update", RecordType: RecordType, RecordID: RecordID};
             updateEditObject["FieldName"] = key;
-            updateEditObject["Value"] = fields[key];
+            updateEditObject["Value"] = field;
             updateEditObjects.push(updateEditObject);
           }
         }
@@ -424,8 +426,20 @@ export default {
         this.showStatusModal = true;
       });
     },
+    deleteRemovedRecordsInArray(key, field, beforeEditFields) {
+      let recordsToDelete = beforeEditFields[key].filter(item => {
+        let deleted = true;
+        for (let i = 0; i < field.length; i++) {
+          if (item["RecordID"] === field[i]["RecordID"]) {
+            deleted = false;
+          }
+        }
+        return deleted;
+      });
+      recordsToDelete.forEach(record => this.postDelete(this.getSingularRecordType(key), record["RecordID"]));
+    },
     postDelete(RecordType, RecordID) {
-      let deleteEditObject = {RecordType: RecordType, RecordID: RecordID};
+      let deleteEditObject = {EditType: "delete", RecordType: RecordType, RecordID: RecordID};
       axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, deleteEditObject,
         {
         headers: {
@@ -434,6 +448,7 @@ export default {
       }).then(response => {
         
       }).catch(error => {
+        console.log(error);
         this.statusMessage = "Failed to update AHJ information.";
         this.showStatusModal = true;
       });
@@ -457,9 +472,25 @@ export default {
     addEngRevReq() {
       this.AHJ.EngineeringReviewRequirements.push(this.deepCopyObject(constants.ENGINEERINGREVIEWREQUIREMENTS_FIELDS));
     },
+    newTabContact() {
+      this.addContact();
+      this.tabsContact.push(this.tabCounterContact++);
+    },
     newTabEngRevReq() {
       this.addEngRevReq();
       this.tabsEngReqRev.push(this.tabCounterEngReqRev++);
+    },
+    closeTabContact(x) {
+      for (let i = 0; i < this.tabsContact.length; i++) {
+        if (this.tabsContact[i] === x) {
+          this.AHJ.Contacts.splice(i, 1);
+          this.tabsContact.splice(i, 1);
+        }
+        for (let i = 0; i < this.tabsContact.length; i++) {
+          this.tabsContact[i] = i;
+        }
+        this.tabCounterContact = this.tabsContact.length;
+      }
     },
     closeTabEngReqReq(x) {
       for (let i = 0; i < this.tabsEngReqRev.length; i++) {
@@ -481,7 +512,7 @@ export default {
           if (this.isArray(field)) {
             result[key] = [];
             field.forEach(item => {
-              result[key].push(this.setAHJFieldsFromResponse(item));
+              result[key].push(this.deepCopyObject(item));
             });
           } else if(this.isObject(field)) {
             result[key] = this.deepCopyObject(field);
@@ -508,6 +539,20 @@ export default {
     },
     getBFormInputPlaceholder(fieldName) {
       return "Enter a " + fieldName + "...";
+    }
+  },
+  computed: {
+    modes() {
+      if(this.$store.state.loginStatus["isSuper"]) {
+        return [
+          { value: "update", text: "Edit an existing AHJ..."},
+          { value: "create", text: "Submit a new AHJ..."}
+        ];
+      } else {
+        return [
+          { value: "update", text: "Edit an existing AHJ..."}
+        ];
+      }
     }
   }
 };
