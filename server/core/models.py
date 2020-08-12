@@ -373,7 +373,7 @@ class Edit(models.Model):
     ParentRecordType = models.CharField(default='', max_length=45)
     EditType = models.CharField(max_length=45)
     FieldName = models.CharField(default='', max_length=45)
-    Value = models.TextField(default='')
+    Value = models.TextField(default='', blank=True)
     PreviousValue = models.TextField(null=True, default=None)
     ModifyingUserID = models.IntegerField()
     ModifiedDate = models.DateTimeField(auto_now_add=True)
@@ -484,6 +484,7 @@ class Edit(models.Model):
         record_field_meta = apps.get_model('core', self.RecordType)._meta.get_field(self.FieldName)
         choices_dict = dict(record_field_meta.choices)
         if choices_dict:
+            choices_dict[''] = ''
             if self.Value not in choices_dict:
                 return False
         if record_field_meta.__class__.__name__ == 'DecimalField':
