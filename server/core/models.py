@@ -84,7 +84,7 @@ def check_record_edit_create_confirmed(record):
         create_edit = Edit.objects.filter(RecordID=record.AHJID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
     else:
         create_edit = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
-    if create_edit is not None and create_edit.IsConfirmed:
+    if create_edit is None or create_edit.IsConfirmed:
         return True
     return False
 
@@ -373,8 +373,8 @@ class Edit(models.Model):
     ParentRecordType = models.CharField(default='', max_length=45)
     EditType = models.CharField(max_length=45)
     FieldName = models.CharField(default='', max_length=45)
-    Value = models.TextField(default='', blank=True)
-    PreviousValue = models.TextField(null=True, default=None)
+    Value = models.TextField(default=None, null=True)
+    PreviousValue = models.TextField(default=None, null=True)
     ModifyingUserID = models.IntegerField()
     ModifiedDate = models.DateTimeField(auto_now_add=True)
     IsConfirmed = models.BooleanField(null=True, default=None)
@@ -480,7 +480,7 @@ class Edit(models.Model):
         except FieldDoesNotExist:
             return False
 
-    def validate_Value(self):
+    def clean_Value(self):
         record_field_meta = apps.get_model('core', self.RecordType)._meta.get_field(self.FieldName)
         choices_dict = dict(record_field_meta.choices)
         if choices_dict:
@@ -488,6 +488,9 @@ class Edit(models.Model):
             if self.Value not in choices_dict:
                 return False
         if record_field_meta.__class__.__name__ == 'DecimalField':
+            if self.Value == '':
+                self.Value = None
+                return True
             try:
                 float(self.Value)
             except ValueError:

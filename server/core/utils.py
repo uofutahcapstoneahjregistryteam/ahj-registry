@@ -216,7 +216,7 @@ def process_edit_creation(edit_data, user):
                 return {'detail': 'Record not found'}, status.HTTP_404_NOT_FOUND
             if not edit.validate_FieldName():
                 return {'detail': 'Invalid field name.'}, status.HTTP_400_BAD_REQUEST
-            if not edit.validate_Value():
+            if not edit.clean_Value():
                 return {'detail': 'Invalid value given.'}, status.HTTP_400_BAD_REQUEST
             if Edit.objects.filter(RecordID=edit.RecordID).filter(FieldName=edit.FieldName).filter(IsConfirmed=None).filter(Value=edit.Value).exists():
                 return {'detail': 'An unconfirmed edit with this value already exists.'}, status.HTTP_400_BAD_REQUEST
