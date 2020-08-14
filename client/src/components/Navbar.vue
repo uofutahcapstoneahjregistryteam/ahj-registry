@@ -5,37 +5,17 @@
       <h1 class="app-title">AHJ Registry</h1>
     </router-link>
     <ul class="navbar-nav ml-auto">
-      <!-- <li class="nav-item">
-        <router-link to="/" class="nav-link">Home</router-link>
-      </li>-->
-      <!-- <li class="nav-item">
-        <router-link to="/product-search" class="nav-link">Product Search</router-link>
-      </li>-->
-      <!-- <li class="nav-item">
-        <router-link to="/about" class="nav-link">About</router-link>
-      </li>
-      -->
       <li class="nav-item">
         <router-link :to="{ name: 'ahj-search' }" class="nav-link">Search</router-link>
       </li>
       <li class="nav-item">
         <router-link :to="{ name: 'history' }" class="nav-link">History</router-link>
       </li>
-      <!-- <li class="nav-item">
-        <router-link :to="{ name: 'submission' }" class="nav-link">Submit</router-link>
-      </li> -->
-      <!-- <li class="nav-item">
-        <router-link :to="{ name: 'manufacturer-search' }" class="nav-link">Manufacturer Search</router-link>
-      </li>-->
-
-      <li v-if="isLogin" class="nav-item">
-        <router-link :to="{name: 'edit'}" class="nav-link">Edit</router-link>
-      </li>
       <li v-if="!isLogin" class="nav-item">
-        <router-link to="/login" class="nav-link">Login</router-link>
+        <button class="nav-link" @click="$store.commit('setShowLoginModal', true)">Login</button>
       </li>
       <li v-if="isLogin" class="nav-item">
-        <a class="nav-link" href id="logout">Logout</a>
+        <button class="nav-link" @click="logout()">Logout</button>
       </li>
     </ul>
   </nav>
@@ -58,8 +38,7 @@ export default {
             isSuper: false,
             isStaff: false,
             authToken: ""
-          });
-      this.$router.push({name: "ahj-search"});
+      });
     }
   }
 }
@@ -97,6 +76,10 @@ nav {
 
 .nav-link {
   color: #3b3932 !important;
+  background:none;
+  border:none;
+  padding-top: 0px;
+  outline: none;
 }
 
 .app-title {

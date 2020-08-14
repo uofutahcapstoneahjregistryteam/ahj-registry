@@ -1,14 +1,17 @@
 <template>
   <b-container>
-    <b-row>
+    <b-row v-if="recordLoading">
+      <div class="text-center text-primary my-2">
+        <b-spinner class="align-middle"></b-spinner>
+        <strong>&nbsp; Loading...</strong>
+      </div>
+    </b-row>
+    <b-row v-else>
       <b-col>
         <b-form @submit="onSubmit" @reset="onReset">
             <b-tabs card>
               <b-tab title="AHJ" active>
-                  <b-form-group
-                      id="input-group-1"
-                      label-for="input-1"
-                    >
+                  <b-form-group id="input-group-1" label-for="input-1">
                     <b-tabs card>
                       <b-card-header header-tag="header" class="p-0" role="tab">
                         <b-button block v-b-toggle.accordion-1 variant="info">AHJ Information</b-button>
@@ -20,7 +23,10 @@
                             <b-col cols="4">
                               <label>{{ nameAHJ }}:</label>
                             </b-col>
-                            <b-col cols="8">
+                            <b-col v-if="editPageViewOnly">
+                              <label>{{ valueAHJ }}</label>
+                            </b-col>
+                            <b-col cols="8" v-else>
                               <label v-if="nameAHJ === 'RecordID'">{{ valueAHJ }}</label>
                               <b-form-select v-else-if="choiceFields.AHJ[nameAHJ]" v-model="AHJ[nameAHJ]" :options="choiceFields.AHJ[nameAHJ]" />
                               <b-form-input v-else v-model="AHJ[nameAHJ]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJ)" />
@@ -45,7 +51,10 @@
                                   <b-col cols="4">
                                     <label>{{ nameAHJAddress }}:</label>
                                   </b-col>
-                                  <b-col cols="8">
+                                  <b-col v-if="editPageViewOnly">
+                                    <label>{{ valueAHJAddress }}</label>
+                                  </b-col>
+                                  <b-col cols="8" v-else>
                                     <label v-if="nameAHJAddress === 'RecordID'">{{ valueAHJAddress }}</label>
                                     <b-form-select v-else-if="choiceFields.Address[nameAHJAddress]" v-model="AHJ.Address[nameAHJAddress]" :options="choiceFields.Address[nameAHJAddress]" />
                                     <b-form-input v-else v-model="AHJ.Address[nameAHJAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJAddress)" />
@@ -71,7 +80,10 @@
                                 <b-col cols="4">
                                   <label>{{ nameAHJAddressLocation }}:</label>
                                 </b-col>
-                                <b-col cols="8">
+                                <b-col v-if="editPageViewOnly">
+                                  <label>{{ valueAHJAddressLocation }}</label>
+                                </b-col>
+                                <b-col cols="8" v-else>
                                   <label v-if="nameAHJAddressLocation === 'RecordID'">{{ valueAHJAddressLocation }}</label>
                                   <b-form-select v-else-if="choiceFields.Location[nameAHJAddressLocation]" v-model="AHJ.Address.Location[nameAHJAddressLocation]" :options="choiceFields.Location[nameAHJAddressLocation]" />
                                   <b-form-input v-else v-model="AHJ.Address.Location[nameAHJAddressLocation]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJAddressLocation)" />
@@ -88,8 +100,7 @@
                 <b-form-group id="input-group-1" label-for="input-1">
                   <b-tabs card>
                     <b-tab v-for="i in tabsContact" :key="'dyn-tab-' + i" :title="'Contact ' + i">
-                      Contact {{ i }}
-                      <b-button size="sm" variant="danger" class="float-right" @click="closeTabContact(i)">Remove</b-button>
+                      <b-button size="sm" variant="danger" class="float-right" :disabled="editPageViewOnly" @click="closeTabContact(i)">Delete</b-button>
                       <b-card-header header-tag="header" class="p-0" role="tab">
                         <b-button block v-b-toggle.accordion-4 variant="info">Contact Information</b-button>
                       </b-card-header>
@@ -100,7 +111,10 @@
                               <b-col cols="4">
                                 <label>{{ nameContact }}:</label>
                               </b-col>
-                              <b-col cols="8">
+                              <b-col v-if="editPageViewOnly">
+                                <label>{{ valueContact }}</label>
+                              </b-col>
+                              <b-col cols="8" v-else>
                                 <label v-if="nameContact === 'RecordID'">{{ AHJ.Contacts[i][nameContact] }}</label>
                                 <b-form-select v-else-if="choiceFields.Contact[nameContact]" v-model="AHJ.Contacts[i][nameContact]" :options="choiceFields.Contact[nameContact]" />
                                 <b-form-input v-else v-model="AHJ.Contacts[i][nameContact]" type="text" :placeholder="getBFormInputPlaceholder(nameContact)" />
@@ -125,7 +139,10 @@
                               <b-col cols="4">
                                 <label>{{ nameContactAddress }}:</label>
                               </b-col>
-                              <b-col cols="8">
+                              <b-col v-if="editPageViewOnly">
+                                <label>{{ valueContactAddress }}</label>
+                              </b-col>
+                              <b-col cols="8" v-else>
                                 <label v-if="nameContactAddress === 'RecordID'">{{ valueContactAddress }}</label>
                                 <b-form-select v-else-if="choiceFields.Address[nameContactAddress]" v-model="AHJ.Contacts[i].Address[nameContactAddress]" :options="choiceFields.Address[nameContactAddress]" />
                                 <b-form-input v-else v-model="AHJ.Contacts[i].Address[nameContactAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddress)" />
@@ -151,7 +168,10 @@
                                 <b-col cols="4">
                                   <label>{{ nameContactAddressLocation }}:</label>
                                 </b-col>
-                                <b-col cols="8">
+                                <b-col v-if="editPageViewOnly">
+                                  <label>{{ valueContactAddressLocation }}</label>
+                                </b-col>
+                                <b-col cols="8" v-else>
                                   <label v-if="nameContactAddressLocation === 'RecordID'">{{ valueContactAddressLocation }}</label>
                                   <b-form-select v-else-if="choiceFields.Location[nameContactAddressLocation]" v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" :options="choiceFields.Location[nameContactAddressLocation]" />
                                   <b-form-input v-else v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddressLocation)" />
@@ -163,7 +183,7 @@
                       </div>
                     </b-tab>
                     <template v-slot:tabs-end>
-                      <b-nav-item role="presentation" @click.prevent="newTabContact" href="#"><b>+</b></b-nav-item>
+                      <b-nav-item role="presentation" :disabled="editPageViewOnly" @click.prevent="newTabContact" href="#"><b>+</b></b-nav-item>
                     </template>
                   </b-tabs>
                 </b-form-group>
@@ -175,14 +195,20 @@
                     >
                   <b-tabs card>
                     <b-tab v-for="i in tabsEngReqRev" :key="'dyn-tab-' + i" :title="'Engineering Review Requirement ' + i">
-                      Tab contents {{ i }}
-                      <b-button size="sm" variant="danger" class="float-right" @click="closeTabEngReqReq(i)">Remove</b-button>
+                      <b-row>
+                        <b-col>
+                          <b-button size="sm" variant="danger" class="float-right" :disabled="editPageViewOnly" @click="closeTabEngReqReq(i)">Delete</b-button>
+                        </b-col>
+                      </b-row>
                       <div v-for="(valueEngRevReq, nameEngRevReq) in AHJ.EngineeringReviewRequirements[i]" :key=nameEngRevReq>
                         <b-row v-if="mode === 'create' ? nameEngRevReq !== 'RecordID' : true">
                           <b-col cols="4">
                             <label>{{ nameEngRevReq }}:</label>
                           </b-col>
-                          <b-col cols="8">
+                          <b-col v-if="editPageViewOnly">
+                            <label>{{ valueEngRevReq }}</label>
+                          </b-col>
+                          <b-col cols="8" v-else>
                             <label v-if="nameEngRevReq === 'RecordID'">{{ AHJ.EngineeringReviewRequirements[i][nameEngRevReq] }}</label>
                             <b-form-select v-else-if="choiceFields.EngineeringReviewRequirement[nameEngRevReq]" v-model="AHJ.EngineeringReviewRequirements[i][nameEngRevReq]" :options="choiceFields.EngineeringReviewRequirement[nameEngRevReq]" />
                             <b-form-input v-else v-model="AHJ.EngineeringReviewRequirements[i][nameEngRevReq]" type="text" :placeholder="getBFormInputPlaceholder(nameEngRevReq)" />
@@ -191,13 +217,12 @@
                       </div>
                     </b-tab>
                     <template v-slot:tabs-end>
-                      <b-nav-item role="presentation" @click.prevent="newTabEngRevReq" href="#"><b>+</b></b-nav-item>
+                      <b-nav-item role="presentation" :disabled="editPageViewOnly" @click.prevent="newTabEngRevReq" href="#"><b>+</b></b-nav-item>
                     </template>
                   </b-tabs>
                 </b-form-group>
               </b-tab>
             </b-tabs>
-          <!-- <b-button variant="primary" class="float-right" @click="onSubmit">Submit</b-button> -->
         </b-form>
       </b-col>
     </b-row>
@@ -207,19 +232,17 @@
 <script>
 import axios from "axios";
 import constants from "../constants.js";
-
 export default {
   props: [
     'mode',
-    'editingRecordID'
+    'editPageViewOnly',
+    'selectedRowToEdit'
   ],
   data() {
     return {
-      previousAPIURLAddon: "",
+      recordLoading: true,
+      editMode: false,
       beforeEditAHJRecord: {},
-
-      showStatusModal: false,
-      statusMessage: "",
       EditTypeAndRecordTypeAndRecordID: "",
       requestType: "post",
       tabsContact: [],
@@ -231,61 +254,40 @@ export default {
     }
   },
   mounted() {
-    this.previousAPIURLAddon = this.$store.state.apiURLAddon;
-    this.$store.commit("setApiUrlAddon", "edit/submit/");
-    if(this.$store.state.loginStatus["status"] !== "success") {
-      this.$router.replace({ name: "login" });
-    }
     this.initiateMode();
   },
-  beforeDestroy() {
-    console.log('in before destroy');
-    this.$store.commit("setApiUrlAddon", this.previousAPIURLAddon);
-  },
   methods: {
-    validateEditAHJID() {
-      return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$)/.test(this.editingRecordID);
-    },
     initiateMode() {
-      console.log('in initiate');
-      console.log('mode: ' + this.mode);
       if (!this.mode) {
-        console.log('no mode')
         return;
       } else if (this.mode === 'create') {
         this.AHJ = this.deepCopyObject(constants.AHJ_FIELDS);
       } else if (this.mode === 'update') {
-        console.log('in update');
-        if (!this.validateEditAHJID()) {
-          console.log('failed uuid validation');
-          return;
-        }
-        this.getAHJRecord();
+        this.AHJ = this.setAHJFieldsFromResponse(this.$store.state.apiData.results[this.selectedRowToEdit]);
+        this.recordLoading = false;
       }
     },
     onSubmit() {
-      console.log('in onSubmit');
       if (this.mode === "create") {
         this.postCreate("AHJ", this.AHJ);
       } else if (this.mode === "update") {
-        console.log("in update");
         this.postUpdate("AHJ", this.AHJ, this.AHJ["RecordID"], this.beforeEditAHJRecord);
       }
     },
     onReset() {
 
     },
-    getAHJRecord() {
-      console.log('getting AHJ record...');
-      axios.get(this.$store.state.apiURL + "ahj/" + this.editingRecordID + "/?view=confirmed", {
+    getConfirmedAHJRecord() {
+      this.recordLoading = true;
+      axios.get(this.$store.state.apiURL + "ahj/" + this.AHJ.RecordID + "/?view=confirmed", {
         headers: {
           Authorization: this.$store.state.loginStatus.authToken
         }
       }).then(response => {
-        console.log('got the AHJ record...');
         this.beforeEditAHJRecord = this.setAHJFieldsFromResponse(response.data);
         this.AHJ = this.deepCopyObject(this.beforeEditAHJRecord);
         this.setTabCounts();
+        this.recordLoading = false;
       });
     },
     setTabCounts() {
@@ -300,13 +302,10 @@ export default {
     },
     setAHJFieldsFromResponse(record) {
       let result = {};
-      console.log(record);
       Object.keys(record).forEach(key => {
-        console.log(Object.keys(record));
         let field = record[key];
         if (field) {
           if (field.hasOwnProperty("Value")) {
-            console.log('in value');
             let value = field["Value"];
             if (value && field["RecordID"] === value) {
               key = "RecordID";
@@ -315,12 +314,9 @@ export default {
           } else if (this.isArray(field)) {
             result[key] = [];
             field.forEach(item => {
-              console.log(' in array');
-              console.log(item);
               result[key].push(this.setAHJFieldsFromResponse(item));
             });
           } else {
-            console.log('in object');
             result[key] = this.setAHJFieldsFromResponse(record[key]);
           }
         } else {
@@ -330,43 +326,29 @@ export default {
       return result;
     },
     postCreate(RecordType, fields, ParentID, ParentRecordType) {
-      console.log('in postCreate for ' + RecordType);
       let createEditObject = {EditType: "create", RecordType: RecordType}
       if (ParentID && ParentRecordType) {
         createEditObject["ParentID"] = ParentID;
         createEditObject["ParentRecordType"] = ParentRecordType;
       }
-      console.log(createEditObject);
-      axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, createEditObject,
+      axios.post(this.$store.state.apiURL + "edit/submit/", createEditObject,
         {
           headers: {
             Authorization: this.$store.state.loginStatus.authToken
           }
       }).then(response => {
-        console.log("response for " + RecordType + ": ");
-        console.log(response);
-        console.log("fields");
-        console.log(fields);
         let RecordID = response.data["RecordID"];
         fields["RecordID"] = RecordID;
-        console.log(RecordID);
         this.postUpdate(RecordType, fields, RecordID);
       }).catch(error => {
-        console.log(error);
       });
     },
     postUpdate(RecordType, fields, RecordID, beforeEditFields) {
-      console.log('in postUpdate');
-      console.log(fields);
       let updateEditObjects = [];
       Object.keys(fields).forEach(key => {
         let field = fields[key];
-        console.log('in update loop');
-        console.log(key);
         if(field !== null) {
           if (this.isArray(field)) {
-            console.log('in array for');
-            console.log(field);
             if (this.mode === "update" && beforeEditFields) {
               this.deleteRemovedRecordsInArray(key, field, beforeEditFields);
             }
@@ -375,28 +357,20 @@ export default {
               if (subRecordID) {
                 this.postUpdate(this.getSingularRecordType(key), field[i], subRecordID, beforeEditFields[key][i]);
               } else {
-                console.log('will create ' + key + ' from update');
                 this.postCreate(this.getSingularRecordType(key), field[i], RecordID, RecordType);
               }
             }
           } else if (this.isObject(field)) {
-            console.log('in object for');
-            console.log(field);
             let subRecordID = field["RecordID"];
             if (subRecordID) {
               this.postUpdate(key, field, subRecordID, beforeEditFields[key]);
             } else {
-              console.log('will create ' + key + ' from update');
               this.postCreate(key, field, RecordID, RecordType);
             }
           } else if(key === "RecordID" || (this.mode === "create" ? field === "" : false)
             || (this.mode === "update" && beforeEditFields ? this.checkEditMade(fields, beforeEditFields, key) : false)) {
-              console.log(field);
-              console.log('skipped');
             return;
           } else {
-            console.log('in else for');
-            console.log(field);
             let updateEditObject = {EditType: "update", RecordType: RecordType, RecordID: RecordID};
             updateEditObject["FieldName"] = key;
             updateEditObject["Value"] = field;
@@ -404,9 +378,8 @@ export default {
           }
         }
       });
-      console.log(updateEditObjects);
       if (updateEditObjects.length > 0) {
-        axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, updateEditObjects,
+        axios.post(this.$store.state.apiURL + "edit/submit/", updateEditObjects,
           {
           headers: {
             Authorization: this.$store.state.loginStatus.authToken
@@ -414,8 +387,6 @@ export default {
         }).then(response => {
           
         }).catch(error => {
-          this.statusMessage = "Failed to update AHJ information.";
-          this.showStatusModal = true;
         });
       }
     },
@@ -433,7 +404,7 @@ export default {
     },
     postDelete(RecordType, RecordID) {
       let deleteEditObject = {EditType: "delete", RecordType: RecordType, RecordID: RecordID};
-      axios.post(this.$store.state.apiURL + this.$store.state.apiURLAddon, deleteEditObject,
+      axios.post(this.$store.state.apiURL + "edit/submit/", deleteEditObject,
         {
         headers: {
           Authorization: this.$store.state.loginStatus.authToken
@@ -441,9 +412,6 @@ export default {
       }).then(response => {
         
       }).catch(error => {
-        console.log(error);
-        this.statusMessage = "Failed to update AHJ information.";
-        this.showStatusModal = true;
       });
     },
     getSingularRecordType(name) {

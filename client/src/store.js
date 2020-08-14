@@ -13,7 +13,7 @@ export default new Vuex.Store({
     apiData: [],
     apiURL: constants.API_ENDPOINT,
     apiURLAddon: "",
-    apiLoading: true,
+    apiLoading: false,
     hasNext: false,
     hasPrevious: false,
     currentPage: 1,
@@ -28,7 +28,8 @@ export default new Vuex.Store({
       isSuper: false,
       isStaff: false,
       authToken: ""
-    }
+    },
+    showLoginModal: false
   },
   getters: {
     apiData: state => state.apiData
@@ -122,6 +123,13 @@ export default new Vuex.Store({
           });
       }
     },
+    deleteAPIData(state) {
+      state.apiData = [];
+      state.ahjCount = "";
+    },
+    setShowLoginModal(state, payload) {
+      state.showLoginModal = payload;
+    },
     toggleAPILoading(state) {
       state.apiLoading = !state.apiLoading;
     },
@@ -136,6 +144,7 @@ export default new Vuex.Store({
     },
     setApiUrlAddon(state, value) {
       state.apiURLAddon = value;
+      console.log(state.apiURLAddon);
     },
     exportResults(state) {
       let url = state.apiURL + state.apiURLAddon;

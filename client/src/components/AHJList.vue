@@ -9,21 +9,18 @@
             <strong>&nbsp; Loading...</strong>
           </div>
         </template>
-        <template v-slot:row-details>
-          <div class="text-center text-primary my-2">
-            <b-spinner class="align-middle"></b-spinner>
-            <strong>&nbsp; Loading...</strong>
-          </div>
-        </template>
       </b-table>
     </div>
     <component-pagination class="pagination" id="bottom-buttons"></component-pagination>
     <b-modal size="xl" v-model="showEditPageModal">
+      <template v-slot:modal-header>
+        <b-button :disabled="!editPageViewOnly" size="md" variant="danger" @click="tryEnterEditPageEditMode">Edit this AHJ</b-button>
+      </template>
       <template v-slot:modal-footer>
-      <b-button size="sm" variant="primary" @click="$refs.editpage.onSubmit(); showEditPageModal = false; $store.commit('callAPI');">Submit</b-button>
-      <b-button size="sm" variant="danger" @click="showEditPageModal = false">Cancel</b-button>
+      <b-button size="sm" variant="primary" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="$refs.editpage.onSubmit(); showEditPageModal = false;">Submit</b-button>
+      <b-button size="sm" variant="danger" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="showEditPageModal = false">Cancel</b-button>
     </template>
-      <component-edit-page ref="editpage" :mode="editPageMode" :editingRecordID="selectedAHJ"></component-edit-page>
+      <component-edit-page ref="editpage" :editPageViewOnly="editPageViewOnly" :mode="editPageMode" :selectedRowToEdit="selectedRow"></component-edit-page>
     </b-modal>
   </div>
 </template>
@@ -32,6 +29,10 @@
 import Pagination from "./Pagination.vue";
 import EditPage from "./EditPage.vue";
 export default {
+  components: {
+    "component-pagination": Pagination,
+    "component-edit-page": EditPage
+  },
   props: ["admin_page"],
   data() {
     return {
@@ -195,14 +196,21 @@ export default {
           thClass: ".col-field-styling"
         },
       ],
-      selectedAHJ: [],
+      selectedRow: null,
       editPageMode: "",
+      editPageHeader: "",
+      editPageViewOnly: true,
       showEditPageModal: false
     };
   },
   beforeCreate() {
+    console.log('loading data');
     this.$store.commit("setApiUrlAddon", "ahj/");
+    this.$store.commit("toggleAPILoading");
     this.$store.commit("callAPI");
+  },
+  beforeDestroy() {
+    this.$store.commit("deleteAPIData");
   },
   computed: {
     apiData() {
@@ -222,27 +230,37 @@ export default {
     },
     dataReady() {
       return this.$store.state.dataReady;
-    },
-    getEditPageMode() {
-      return this.editPageMode;
     }
   },
   methods: {
     onRowSelected(items) {
-      this.editPageMode = "update";
-      this.showEditPageModal = true;
-      this.selectedAHJ = items[0].AHJID.Value;
-      console.log(this.$refs.selectableTable);
       for (let i = 0; i < this.$refs.selectableTable.selectedRows.length; i++) {
         if (this.$refs.selectableTable.selectedRows[i]) {
-          this.$refs.selectableTable.selectedRows[i] = false;
+          this.selectedRow = i;
+          this.editPageMode = "update";
+          this.editPageHeader = "Edit an AHJ";
+          this.editPageViewOnly = true;
+          this.showEditPageModal = true;
+          this.$refs.selectableTable.selectedRows[i] = false; // this causes onRowSelected to be called again
           return;
         }
       }  
     },
+    tryEnterEditPageEditMode() {
+      if (this.$store.state.loginStatus.status !== "success") {
+        this.$store.commit("setShowLoginModal", true);
+        return;
+      }
+      this.$refs.editpage.getConfirmedAHJRecord();
+      this.editPageViewOnly = false;
+    },
     ahjCodeFormatter(value) {
-      if(value)
+      if(value) {
+        if (value === "NoSolarRegulations") {
+          return "No Solar Regulations";
+        }
         return value.substring(0, 4) + " " + value.substring(4);
+      }
       return value;
     },
     nextPage() {
@@ -254,11 +272,7 @@ export default {
 
       return this.$store.commit("callAPI", this.$store.state.previousPage);
     }
-  },
-  components: {
-    "component-pagination": Pagination,
-    "component-edit-page": EditPage
-  },
+  }
 };
 </script>
 

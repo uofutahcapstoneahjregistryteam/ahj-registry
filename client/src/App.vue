@@ -3,16 +3,19 @@
     <Navbar id="navbar"></Navbar>
     <router-view id="router-v" />
     <Footer id="footer"></Footer>
+    <Login id = Login></Login>
   </div>
 </template>
 
 <script>
 import Navbar from "./components/Navbar.vue";
 import Footer from "./components/Footer.vue";
+import Login from "./components/Login.vue";
 export default {
   components: {
     Navbar,
-    Footer
+    Footer,
+    Login
   }
 };
 </script>

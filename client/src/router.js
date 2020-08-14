@@ -5,8 +5,7 @@ import Router from "vue-router";
 import AHJSearchPage from "./views/AHJSearchPage.vue";
 import AHJHistoryPage from "./views/AHJHistoryPage.vue";
 // import EditPage from "./views/EditPage.vue"
-import Login from "./views/Login";
-import SignUp from "./views/SignUp";
+import Login from "./components/Login";
 
 Vue.use(Router);
 
@@ -22,11 +21,6 @@ export default new Router({
       path: "/login",
       name: "login",
       component: Login
-    },
-    {
-      path: "/register",
-      name: "register",
-      component: SignUp
     },
     // {
     //   path: "/about",
