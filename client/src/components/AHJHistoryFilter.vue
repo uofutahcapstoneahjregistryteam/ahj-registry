@@ -62,7 +62,6 @@ export default {
         // Don't search if no keywords were provided
         return;
       }
-      console.log(searchString);
       this.$store.commit("toggleAPILoading");
       this.$store.commit("callAPI", searchString);
     },

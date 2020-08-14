@@ -117,6 +117,23 @@ city_shp = os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'data', 'tl_2010_02_place10/tl_2010_02_place10.shp'),
 )
 
+zip_mapping10 = {
+    'ZCTA5CE': 'ZCTA5CE10',
+    'GEOID': 'GEOID10',
+    'CLASSFP': 'CLASSFP10',
+    'MTFCC': 'MTFCC10',
+    'FUNCSTAT': 'FUNCSTAT10',
+    'ALAND': 'ALAND10',
+    'AWATER': 'AWATER10',
+    'INTPTLAT': 'INTPTLAT10',
+    'INTPTLON': 'INTPTLON10',
+    'mpoly': 'MULTIPOLYGON'
+}
+
+zip_shp = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'data', 'tl_2019_us_zcta510/tl_2019_us_zcta510.shp'),
+)
+
 
 def run_state(verbose=True):
     lm = LayerMapping(State, state_shp, state_mapping, transform=False)
@@ -130,4 +147,9 @@ def run_county(verbose=True):
 
 def run_city():
     lm = LayerMapping(City, os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', city_shp),), city_mapping10, transform=False)
+    lm.save(strict=True, verbose=True)
+
+
+def run_zip():
+    lm = LayerMapping(Zip, os.path.abspath(os.path.join(os.path.dirname(__file__), 'data', zip_shp),), zip_mapping10, transform=False)
     lm.save(strict=True, verbose=True)

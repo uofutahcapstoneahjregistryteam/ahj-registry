@@ -376,3 +376,40 @@ def binary_search(arr, x):
 
             # If we reach here, then the element was not present
     return -1
+
+
+def assign_ahj_county():
+    ahjs = AHJ.objects.filter(mpoly__GEOID__regex=r'^[0-9]{7}$').exclude(address__StateProvince='AK').order_by('address__StateProvince')
+    counties = County.objects.all()
+    current_state_abbr = ''
+    i = 1
+    for ahj in ahjs:
+
+        # Get the ahj's address to filter by state
+        address = Address.objects.get(AHJ=ahj)
+
+        # Check if we need to filter by another state now
+        temp_state_abbr = address.StateProvince
+        if current_state_abbr != temp_state_abbr:
+            current_state_abbr = temp_state_abbr
+            print('filtering to %s' % current_state_abbr)
+            counties_temp = counties.filter(STATEABBR=current_state_abbr)
+
+        geoid = ahj.mpoly.GEOID
+        city = City.objects.get(GEOID=geoid)
+        contains_count = 0
+        containing_county = None
+        for county in counties_temp:
+            print('checking %s' % county.NAMELSAD)
+            if county.mpoly.contains(city.mpoly):
+                contains_count += 1
+                print('contained')
+                containing_county = county
+        if contains_count == 1:
+            address.County = containing_county.NAMELSAD
+            address.save()
+        else:
+            print('failed')
+            print(city.NAMELSAD)
+        print(current_state_abbr + " %i" % i)
+        i += 1

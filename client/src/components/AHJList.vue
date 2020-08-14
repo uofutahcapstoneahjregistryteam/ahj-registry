@@ -20,7 +20,7 @@
       <b-button size="sm" variant="primary" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="$refs.editpage.onSubmit(); showEditPageModal = false;">Submit</b-button>
       <b-button size="sm" variant="danger" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="showEditPageModal = false">Cancel</b-button>
     </template>
-      <component-edit-page ref="editpage" :editPageViewOnly="editPageViewOnly" :mode="editPageMode" :selectedRowToEdit="selectedRow"></component-edit-page>
+      <component-edit-page ref="editpage" :editPageViewOnly="editPageViewOnly" :mode="editPageMode" :selectedAHJ="selectedAHJ"></component-edit-page>
     </b-modal>
   </div>
 </template>
@@ -196,7 +196,7 @@ export default {
           thClass: ".col-field-styling"
         },
       ],
-      selectedRow: null,
+      selectedAHJ: {},
       editPageMode: "",
       editPageHeader: "",
       editPageViewOnly: true,
@@ -204,7 +204,6 @@ export default {
     };
   },
   beforeCreate() {
-    console.log('loading data');
     this.$store.commit("setApiUrlAddon", "ahj/");
     this.$store.commit("toggleAPILoading");
     this.$store.commit("callAPI");
@@ -236,7 +235,7 @@ export default {
     onRowSelected(items) {
       for (let i = 0; i < this.$refs.selectableTable.selectedRows.length; i++) {
         if (this.$refs.selectableTable.selectedRows[i]) {
-          this.selectedRow = i;
+          this.selectedAHJ = items[0];
           this.editPageMode = "update";
           this.editPageHeader = "Edit an AHJ";
           this.editPageViewOnly = true;

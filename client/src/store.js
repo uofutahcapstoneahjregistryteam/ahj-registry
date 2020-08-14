@@ -144,7 +144,6 @@ export default new Vuex.Store({
     },
     setApiUrlAddon(state, value) {
       state.apiURLAddon = value;
-      console.log(state.apiURLAddon);
     },
     exportResults(state) {
       let url = state.apiURL + state.apiURLAddon;

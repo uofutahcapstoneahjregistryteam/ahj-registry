@@ -25,7 +25,6 @@ export default {
       let query_string_with_pagination = this.constructURLQueryStringWithPagination(
         currentPage
       );
-      console.log(query_string_with_pagination);
       return this.$store.commit("callAPI", query_string_with_pagination);
     },
     constructURLQueryStringWithPagination(page_num) {
@@ -36,9 +35,6 @@ export default {
         offset_num = (page_num - 1) * this.perPage;
       }
       let query_filter_string = "?";
-      // console.log(
-      //   "Query string on pagination component: " + this.$store.state.queryString
-      // );
       if (this.$store.state.queryString) {
         query_filter_string = this.$store.state.queryString + "&";
       }

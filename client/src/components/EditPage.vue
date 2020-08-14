@@ -18,16 +18,16 @@
                       </b-card-header>
                       <b-collapse id="accordion-1" visible accordion="my-accordion" role="tabpanel">
                         <b-card-body>
-                        <div v-for="(valueAHJ, nameAHJ) in AHJ" :key=nameAHJ>
-                          <b-row v-if="!checkObjectOrArray(valueAHJ) && (mode === 'create' ? nameAHJ !== 'RecordID' : true)">
+                        <div v-for="(valueAHJ, nameAHJ) in constants.AHJ_FIELDS" :key=nameAHJ>
+                          <b-row v-if="!checkObjectOrArray(AHJ[nameAHJ]) && (mode === 'create' ? nameAHJ !== 'RecordID' : true)">
                             <b-col cols="4">
-                              <label>{{ nameAHJ }}:</label>
+                              <label>{{ nameAHJ === "RecordID" ? "AHJ ID" : formatFieldNames(nameAHJ) }}:</label>
                             </b-col>
                             <b-col v-if="editPageViewOnly">
-                              <label>{{ valueAHJ }}</label>
+                              <label>{{ AHJ[nameAHJ] }}</label>
                             </b-col>
                             <b-col cols="8" v-else>
-                              <label v-if="nameAHJ === 'RecordID'">{{ valueAHJ }}</label>
+                              <label v-if="nameAHJ === 'RecordID'">{{ AHJ[nameAHJ] }}</label>
                               <b-form-select v-else-if="choiceFields.AHJ[nameAHJ]" v-model="AHJ[nameAHJ]" :options="choiceFields.AHJ[nameAHJ]" />
                               <b-form-input v-else v-model="AHJ[nameAHJ]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJ)" />
                             </b-col>
@@ -46,16 +46,16 @@
                         </b-card-header>
                         <b-collapse id="accordion-2" accordion="my-accordion" role="tabpanel">
                           <b-card-body>
-                              <div v-for="(valueAHJAddress, nameAHJAddress) in AHJ.Address" :key=nameAHJAddress>
-                                <b-row v-if="!checkObjectOrArray(valueAHJAddress) && (mode === 'create' ? nameAHJAddress !== 'RecordID' : true)">
+                              <div v-for="(valueAHJAddress, nameAHJAddress) in constants.ADDRESS_FIELDS" :key=nameAHJAddress>
+                                <b-row v-if="!checkObjectOrArray(AHJ.Address[nameAHJAddress]) && (mode === 'create' ? nameAHJAddress !== 'RecordID' : true)">
                                   <b-col cols="4">
-                                    <label>{{ nameAHJAddress }}:</label>
+                                    <label>{{ nameAHJAddress === "RecordID" ? "Address ID" : formatFieldNames(nameAHJAddress) }}:</label>
                                   </b-col>
                                   <b-col v-if="editPageViewOnly">
-                                    <label>{{ valueAHJAddress }}</label>
+                                    <label>{{ AHJ.Address[nameAHJAddress] }}</label>
                                   </b-col>
                                   <b-col cols="8" v-else>
-                                    <label v-if="nameAHJAddress === 'RecordID'">{{ valueAHJAddress }}</label>
+                                    <label v-if="nameAHJAddress === 'RecordID'">{{ AHJ.Address[nameAHJAddress] }}</label>
                                     <b-form-select v-else-if="choiceFields.Address[nameAHJAddress]" v-model="AHJ.Address[nameAHJAddress]" :options="choiceFields.Address[nameAHJAddress]" />
                                     <b-form-input v-else v-model="AHJ.Address[nameAHJAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJAddress)" />
                                   </b-col>
@@ -75,16 +75,16 @@
                         </b-card-header>
                         <b-collapse id="accordion-3" accordion="my-accordion" role="tabpanel">
                           <b-card-body>
-                            <div v-for="(valueAHJAddressLocation, nameAHJAddressLocation) in AHJ.Address.Location" :key=nameAHJAddressLocation>
+                            <div v-for="(valueAHJAddressLocation, nameAHJAddressLocation) in constants.LOCATION_FIELDS" :key=nameAHJAddressLocation>
                               <b-row v-if="mode === 'create' ? nameAHJAddressLocation !== 'RecordID' : true">
                                 <b-col cols="4">
-                                  <label>{{ nameAHJAddressLocation }}:</label>
+                                  <label>{{ nameAHJAddressLocation === "RecordID" ? "Location ID" : formatFieldNames(nameAHJAddressLocation)  }}:</label>
                                 </b-col>
                                 <b-col v-if="editPageViewOnly">
-                                  <label>{{ valueAHJAddressLocation }}</label>
+                                  <label>{{ AHJ.Address.Location[nameAHJAddressLocation] }}</label>
                                 </b-col>
                                 <b-col cols="8" v-else>
-                                  <label v-if="nameAHJAddressLocation === 'RecordID'">{{ valueAHJAddressLocation }}</label>
+                                  <label v-if="nameAHJAddressLocation === 'RecordID'">{{ AHJ.Address.Location[nameAHJAddressLocation] }}</label>
                                   <b-form-select v-else-if="choiceFields.Location[nameAHJAddressLocation]" v-model="AHJ.Address.Location[nameAHJAddressLocation]" :options="choiceFields.Location[nameAHJAddressLocation]" />
                                   <b-form-input v-else v-model="AHJ.Address.Location[nameAHJAddressLocation]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJAddressLocation)" />
                                 </b-col>
@@ -106,13 +106,13 @@
                       </b-card-header>
                       <b-collapse id="accordion-4" visible accordion="my-accordion-contact" role="tabpanel">
                         <b-card-body>
-                          <div v-for="(valueContact, nameContact) in AHJ.Contacts[i]" :key=nameContact>
-                            <b-row v-if="!checkObjectOrArray(valueContact) && (mode === 'create' ? nameContact !== 'RecordID' : true)">
+                          <div v-for="(valueContact, nameContact) in constants.CONTACT_FIELDS" :key=nameContact>
+                            <b-row v-if="!checkObjectOrArray(AHJ.Contacts[i][nameContact]) && (mode === 'create' ? nameContact !== 'RecordID' : true)">
                               <b-col cols="4">
-                                <label>{{ nameContact }}:</label>
+                                <label>{{ nameContact === "RecordID" ? "Contact ID" : formatFieldNames(nameContact)  }}:</label>
                               </b-col>
                               <b-col v-if="editPageViewOnly">
-                                <label>{{ valueContact }}</label>
+                                <label>{{ AHJ.Contacts[i][nameContact] }}</label>
                               </b-col>
                               <b-col cols="8" v-else>
                                 <label v-if="nameContact === 'RecordID'">{{ AHJ.Contacts[i][nameContact] }}</label>
@@ -134,16 +134,16 @@
                         </b-card-header>
                         <b-collapse id="accordion-5" accordion="my-accordion-contact" role="tabpanel">
                           <b-card-body>
-                          <div v-for="(valueContactAddress, nameContactAddress) in AHJ.Contacts[i].Address" :key=nameContactAddress>
-                            <b-row v-if="!checkObjectOrArray(valueContactAddress) && (mode === 'create' ? nameContactAddress !== 'RecordID' : true)">
+                          <div v-for="(valueContactAddress, nameContactAddress) in constants.ADDRESS_FIELDS" :key=nameContactAddress>
+                            <b-row v-if="!checkObjectOrArray(AHJ.Contacts[i].Address[nameContactAddress]) && (mode === 'create' ? nameContactAddress !== 'RecordID' : true)">
                               <b-col cols="4">
-                                <label>{{ nameContactAddress }}:</label>
+                                <label>{{ nameContactAddress === "RecordID" ? "Address ID" : formatFieldNames(nameContactAddress) }}:</label>
                               </b-col>
                               <b-col v-if="editPageViewOnly">
-                                <label>{{ valueContactAddress }}</label>
+                                <label>{{ AHJ.Contacts[i].Address[nameContactAddress] }}</label>
                               </b-col>
                               <b-col cols="8" v-else>
-                                <label v-if="nameContactAddress === 'RecordID'">{{ valueContactAddress }}</label>
+                                <label v-if="nameContactAddress === 'RecordID'">{{ AHJ.Contacts[i].Address[nameContactAddress] }}</label>
                                 <b-form-select v-else-if="choiceFields.Address[nameContactAddress]" v-model="AHJ.Contacts[i].Address[nameContactAddress]" :options="choiceFields.Address[nameContactAddress]" />
                                 <b-form-input v-else v-model="AHJ.Contacts[i].Address[nameContactAddress]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddress)" />
                                   </b-col>
@@ -163,16 +163,16 @@
                         </b-card-header>
                         <b-collapse id="accordion-6" accordion="my-accordion-contact" role="tabpanel">
                           <b-card-body>
-                            <div v-for="(valueContactAddressLocation, nameContactAddressLocation) in AHJ.Contacts[i].Address.Location" :key=nameContactAddressLocation>
+                            <div v-for="(valueContactAddressLocation, nameContactAddressLocation) in constants.LOCATION_FIELDS" :key=nameContactAddressLocation>
                               <b-row v-if="mode === 'create' ? nameContactAddressLocation !== 'RecordID' : true">
                                 <b-col cols="4">
-                                  <label>{{ nameContactAddressLocation }}:</label>
+                                  <label>{{ nameContactAddressLocation === "RecordID" ? "Location ID" : formatFieldNames(nameContactAddressLocation)  }}:</label>
                                 </b-col>
                                 <b-col v-if="editPageViewOnly">
-                                  <label>{{ valueContactAddressLocation }}</label>
+                                  <label>{{ AHJ.Contacts[i].Address.Location[nameContactAddressLocation] }}</label>
                                 </b-col>
                                 <b-col cols="8" v-else>
-                                  <label v-if="nameContactAddressLocation === 'RecordID'">{{ valueContactAddressLocation }}</label>
+                                  <label v-if="nameContactAddressLocation === 'RecordID'">{{ AHJ.Contacts[i].Address.Location[nameContactAddressLocation] }}</label>
                                   <b-form-select v-else-if="choiceFields.Location[nameContactAddressLocation]" v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" :options="choiceFields.Location[nameContactAddressLocation]" />
                                   <b-form-input v-else v-model="AHJ.Contacts[i].Address.Location[nameContactAddressLocation]" type="text" :placeholder="getBFormInputPlaceholder(nameContactAddressLocation)" />
                                 </b-col>
@@ -200,13 +200,13 @@
                           <b-button size="sm" variant="danger" class="float-right" :disabled="editPageViewOnly" @click="closeTabEngReqReq(i)">Delete</b-button>
                         </b-col>
                       </b-row>
-                      <div v-for="(valueEngRevReq, nameEngRevReq) in AHJ.EngineeringReviewRequirements[i]" :key=nameEngRevReq>
+                      <div v-for="(valueEngRevReq, nameEngRevReq) in constants.ENGINEERINGREVIEWREQUIREMENTS_FIELDS" :key=nameEngRevReq>
                         <b-row v-if="mode === 'create' ? nameEngRevReq !== 'RecordID' : true">
                           <b-col cols="4">
-                            <label>{{ nameEngRevReq }}:</label>
+                            <label>{{ nameEngRevReq === "RecordID" ? "Engineering Review Requirement ID" : formatFieldNames(nameEngRevReq) }}:</label>
                           </b-col>
                           <b-col v-if="editPageViewOnly">
-                            <label>{{ valueEngRevReq }}</label>
+                            <label>{{ AHJ.EngineeringReviewRequirements[i][nameEngRevReq] }}</label>
                           </b-col>
                           <b-col cols="8" v-else>
                             <label v-if="nameEngRevReq === 'RecordID'">{{ AHJ.EngineeringReviewRequirements[i][nameEngRevReq] }}</label>
@@ -236,10 +236,11 @@ export default {
   props: [
     'mode',
     'editPageViewOnly',
-    'selectedRowToEdit'
+    'selectedAHJ'
   ],
   data() {
     return {
+      constants: constants,
       recordLoading: true,
       editMode: false,
       beforeEditAHJRecord: {},
@@ -263,7 +264,8 @@ export default {
       } else if (this.mode === 'create') {
         this.AHJ = this.deepCopyObject(constants.AHJ_FIELDS);
       } else if (this.mode === 'update') {
-        this.AHJ = this.setAHJFieldsFromResponse(this.$store.state.apiData.results[this.selectedRowToEdit]);
+        this.AHJ = this.setAHJFieldsFromResponse(this.selectedAHJ);
+        this.setTabCounts();
         this.recordLoading = false;
       }
     },
@@ -292,9 +294,11 @@ export default {
     },
     setTabCounts() {
       this.tabCounterContact = this.AHJ.Contacts.length;
+      this.tabsContact = [];
       for (let i = 0; i < this.tabCounterContact; i++) {
         this.tabsContact.push(i);
       }
+      this.tabsEngReqRev = [];
       this.tabCounterEngReqRev = this.AHJ.EngineeringReviewRequirements.length;
       for (let i = 0; i < this.tabCounterEngReqRev; i++) {
         this.tabsEngReqRev.push(i);
@@ -499,7 +503,24 @@ export default {
       return this.isObject(item) || this.isArray(item);
     },
     getBFormInputPlaceholder(fieldName) {
-      return "Enter a " + fieldName + "...";
+      return "Enter a " + this.formatFieldNames(fieldName) + "...";
+    },
+    formatFieldNames(name) {
+      let result = "";
+      let index = 0;
+      while (name[index] >= 'A' && name[index] <= 'Z') {
+        index++;
+      }
+      index--;
+      result += name.substring(0, index);
+      for (let i = index; i < name.length; i++) {
+        if (/([^A-Za-z0-9\.\$]+)|([A-Z])(?=[A-Z][a-z])|([A-Za-z])(?=\$?[0-9]+(?:\.[0-9]+)?)|([0-9])(?=[^\.0-9])|([a-z])(?=[A-Z])/.test(name.substring(index, i))) {
+          result += name.substring(index, i - 1) + " ";
+          index = i - 1;
+        }
+      }
+      result += name.substring(index, name.length);
+      return result;
     }
   },
   computed: {

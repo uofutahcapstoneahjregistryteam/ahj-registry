@@ -9,7 +9,6 @@ export default {
   AHJ_FIELDS: {
     RecordID: "",
     AHJName: "",
-    Description: "",
     BuildingCode: "",
     BuildingCodeNotes: "",
     ElectricCode: "",
@@ -23,24 +22,27 @@ export default {
     DocumentSubmissionMethod: "",
     DocumentSubmissionMethodNotes: "",
     FileFolderURL: "",
+    URL: "",
+    Description: "",
     Address: null,
     Contacts: [],
     EngineeringReviewRequirements: []
   },
   CONTACT_FIELDS: {
     RecordID: "",
-    ContactTimezone: "",
-    ContactType: "",
-    Description: "",
-    Email: "",
     FirstName: "",
     MiddleName: "",
     LastName: "",
-    MobilePhone: "",
+    Title: "",
     WorkPhone: "",
     HomePhone: "",
-    Title: "",
+    MobilePhone: "",
+    Email: "",
+    ContactTimezone: "",
+    ContactType: "",
     PreferredContactMethod: "",
+    URL: "",
+    Description: "",
     Address: null
   },
   ADDRESS_FIELDS: {
@@ -48,31 +50,32 @@ export default {
     AddrLine1: "",
     AddrLine2: "",
     AddrLine3: "",
-    AddressType: "",
     City: "",
-    Country: "",
     County: "",
-    Description: "",
     StateProvince: "",
     ZipPostalCode: "",
+    Country: "",
+    AddressType: "",
+    Description: "",
     Location: null
   },
   LOCATION_FIELDS: {
     RecordID: "",
     Altitude: "",
-    Description: "",
     Elevation: "",
     Longitude: "",
     Latitude: "",
+    LocationType: "",
     LocationDeterminationMethod: "",
-    LocationType: ""
+    Description: ""
   },
   ENGINEERINGREVIEWREQUIREMENTS_FIELDS: {
     RecordID: "",
-    Description: "",
     EngineeringReviewType: "",
     RequirementLevel: "",
-    StampType: ""
+    RequirementLevelNotes: "",
+    StampType: "",
+    Description: ""
   },
   CHOICE_FIELDS: {
     AHJ: {

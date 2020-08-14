@@ -117,7 +117,6 @@ export default {
       if (selectFilterString === "?") {
         return;
       }
-      console.log(selectFilterString);
       this.$store.commit("toggleAPILoading");
       this.$store.commit("callAPI", selectFilterString);
     },
@@ -142,7 +141,6 @@ export default {
       this.$store.commit("toggleAPILoading");
 
       let searchString = "?search=" + this.searchKeyword;
-      // console.log(searchString);
       this.$store.commit("callAPI", searchString);
     }
   }

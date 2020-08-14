@@ -11,3 +11,4 @@ class PolygonAdmin(admin.OSMGeoAdmin):
 admin.site.register(Polygon, PolygonAdmin)
 admin.site.register(County, admin.OSMGeoAdmin)
 admin.site.register(City, admin.OSMGeoAdmin)
+admin.site.register(Zip, admin.OSMGeoAdmin)

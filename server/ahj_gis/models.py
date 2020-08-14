@@ -123,3 +123,20 @@ class City(models.Model):
 
     def __str__(self):
         return self.NAMELSAD + ', ' + self.STATEABBR
+
+
+class Zip(models.Model):
+    ZCTA5CE = models.CharField(max_length=5)
+    GEOID = models.CharField(max_length=5)
+    CLASSFP = models.CharField(max_length=2)
+    MTFCC = models.CharField(max_length=5)
+    FUNCSTAT = models.CharField(max_length=1)
+    ALAND = models.BigIntegerField()
+    AWATER = models.BigIntegerField()
+    INTPTLAT = models.CharField(max_length=11)
+    INTPTLON = models.CharField(max_length=12)
+
+    mpoly = models.MultiPolygonField()
+
+    def __str__(self):
+        return 'ZIP: ' + self.ZCTA5CE + ', GEOID: ' + self.GEOID
