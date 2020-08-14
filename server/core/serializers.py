@@ -98,6 +98,7 @@ class AddressSerializer(serializers.Serializer):
 class ContactSerializer(serializers.Serializer):
     ContactID = EditSerializerHelper(source='*', required=False)
     ContactType = EditSerializerHelper(source='*', required=False)
+    ContactTimezone = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
     Email = EditSerializerHelper(source='*', required=False)
     FirstName = EditSerializerHelper(source='*', required=False)
@@ -106,6 +107,9 @@ class ContactSerializer(serializers.Serializer):
     MiddleName = EditSerializerHelper(source='*', required=False)
     MobilePhone = EditSerializerHelper(source='*', required=False)
     WorkPhone = EditSerializerHelper(source='*', required=False)
+    Title = EditSerializerHelper(source='*', required=False)
+    PreferredContactMethod = EditSerializerHelper(source='*', required=False)
+    URL = EditSerializerHelper(source='*', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
 
     def update(self, instance, validated_data):
@@ -118,6 +122,7 @@ class ContactSerializer(serializers.Serializer):
 class EngineeringReviewRequirementSerializer(serializers.Serializer):
     EngineeringReviewRequirementID = EditSerializerHelper(source='*', required=False)
     RequirementLevel = EditSerializerHelper(source='*', required=False)
+    RequirementLevelNotes = EditSerializerHelper(source='*', required=False)
     StampType = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
     EngineeringReviewType = EditSerializerHelper(source='*', required=False)
@@ -144,6 +149,7 @@ class AHJSerializer(serializers.Serializer):
     FireCodeNotes = EditSerializerHelper(source='*', required=False)
     ResidentialCode = EditSerializerHelper(source='*', required=False)
     ResidentialCodeNotes = EditSerializerHelper(source='*', required=False)
+    URL = EditSerializerHelper(source='*', required=False)
     WindCode = EditSerializerHelper(source='*', required=False)
     WindCodeNotes = EditSerializerHelper(source='*', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)

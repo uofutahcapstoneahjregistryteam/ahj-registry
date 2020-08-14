@@ -80,7 +80,8 @@ CONTACT_TYPE_CHOICES = [
     ('Investor', 'Investor'),
     ('PermittingOfficial', 'Permitting Official'),
     ('FireMarshal', 'Fire Marshal'),
-    ('ProjectManager', 'Project Manager')
+    ('ProjectManager', 'Project Manager'),
+    ('Salesperson', 'Salesperson')
 ]
 
 PREFERRED_CONTACT_METHOD_CHOICES = [

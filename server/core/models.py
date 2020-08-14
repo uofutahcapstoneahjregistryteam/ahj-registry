@@ -105,6 +105,7 @@ class AHJ(models.Model):
     FireCodeNotes = models.CharField(blank=True, max_length=255)
     ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)
     ResidentialCodeNotes = models.CharField(blank=True, max_length=255)
+    URL = models.CharField(blank=True, max_length=255)
     WindCode = models.CharField(choices=WIND_CODE_CHOICES, blank=True, default='', max_length=45)
     WindCodeNotes = models.CharField(blank=True, max_length=255)
     history = HistoricalRecords()
@@ -148,6 +149,7 @@ class Contact(models.Model):
     MobilePhone = models.CharField(blank=True, max_length=31)
     PreferredContactMethod = models.CharField(choices=PREFERRED_CONTACT_METHOD_CHOICES, blank=True, default='', max_length=45)
     Title = models.CharField(blank=True, max_length=100)
+    URL = models.CharField(blank=True, max_length=255)
     WorkPhone = models.CharField(blank=True, max_length=31)
     history = HistoricalRecords()
 
@@ -176,6 +178,7 @@ class EngineeringReviewRequirement(models.Model):
     Description = models.TextField(blank=True)
     EngineeringReviewType = models.CharField(choices=ENGINEERING_REVIEW_TYPE_CHOICES, blank=True, default='', max_length=45)
     RequirementLevel = models.CharField(choices=REQUIREMENT_LEVEL_CHOICES, blank=True, default='', max_length=45)
+    RequirementLevelNotes = models.CharField(blank=True, max_length=255)
     StampType = models.CharField(choices=STAMP_TYPE_CHOICES, max_length=45)
     history = HistoricalRecords()
 
