@@ -1,7 +1,7 @@
 <template>
   <div class="footer">
     <p class="privacy-notice">
-      © 2019 SunSpec Alliance, 4040 Moorpark Ave. Suite 110, San Jose, CA, 95117
+      © 2020 SunSpec Alliance, 4040 Moorpark Ave. Suite 110, San Jose, CA, 95117
       <br />Privacy Policy
     </p>
   </div>

@@ -19,7 +19,7 @@
                       <b-collapse id="accordion-1" visible accordion="my-accordion" role="tabpanel">
                         <b-card-body>
                         <div v-for="(valueAHJ, nameAHJ) in constants.AHJ_FIELDS" :key=nameAHJ>
-                          <b-row v-if="!checkObjectOrArray(AHJ[nameAHJ]) && (mode === 'create' ? nameAHJ !== 'RecordID' : true)">
+                          <b-row v-if="!isObject(AHJ[nameAHJ]) && (mode === 'create' ? nameAHJ !== 'RecordID' : true)">
                             <b-col cols="4">
                               <label>{{ nameAHJ === "RecordID" ? "AHJ ID" : formatFieldNames(nameAHJ) }}:</label>
                             </b-col>
@@ -47,7 +47,7 @@
                         <b-collapse id="accordion-2" accordion="my-accordion" role="tabpanel">
                           <b-card-body>
                               <div v-for="(valueAHJAddress, nameAHJAddress) in constants.ADDRESS_FIELDS" :key=nameAHJAddress>
-                                <b-row v-if="!checkObjectOrArray(AHJ.Address[nameAHJAddress]) && (mode === 'create' ? nameAHJAddress !== 'RecordID' : true)">
+                                <b-row v-if="!isObject(AHJ.Address[nameAHJAddress]) && (mode === 'create' ? nameAHJAddress !== 'RecordID' : true)">
                                   <b-col cols="4">
                                     <label>{{ nameAHJAddress === "RecordID" ? "Address ID" : formatFieldNames(nameAHJAddress) }}:</label>
                                   </b-col>
@@ -99,7 +99,7 @@
               <b-tab title="Contacts">
                 <b-form-group id="input-group-1" label-for="input-1">
                   <b-tabs card>
-                    <b-tab v-for="i in tabsContact" :key="'dyn-tab-' + i" :title="'Contact ' + i">
+                    <b-tab v-for="i in tabsContact" :key="'dyn-tab-' + i" :title="'Contact ' + getTabTitle('Contact', i)">
                       <b-button size="sm" variant="danger" class="float-right" :disabled="editPageViewOnly" @click="closeTabContact(i)">Delete</b-button>
                       <b-card-header header-tag="header" class="p-0" role="tab">
                         <b-button block v-b-toggle.accordion-4 variant="info">Contact Information</b-button>
@@ -107,7 +107,7 @@
                       <b-collapse id="accordion-4" visible accordion="my-accordion-contact" role="tabpanel">
                         <b-card-body>
                           <div v-for="(valueContact, nameContact) in constants.CONTACT_FIELDS" :key=nameContact>
-                            <b-row v-if="!checkObjectOrArray(AHJ.Contacts[i][nameContact]) && (mode === 'create' ? nameContact !== 'RecordID' : true)">
+                            <b-row v-if="!isObject(AHJ.Contacts[i][nameContact]) && (mode === 'create' ? nameContact !== 'RecordID' : true)">
                               <b-col cols="4">
                                 <label>{{ nameContact === "RecordID" ? "Contact ID" : formatFieldNames(nameContact)  }}:</label>
                               </b-col>
@@ -135,7 +135,7 @@
                         <b-collapse id="accordion-5" accordion="my-accordion-contact" role="tabpanel">
                           <b-card-body>
                           <div v-for="(valueContactAddress, nameContactAddress) in constants.ADDRESS_FIELDS" :key=nameContactAddress>
-                            <b-row v-if="!checkObjectOrArray(AHJ.Contacts[i].Address[nameContactAddress]) && (mode === 'create' ? nameContactAddress !== 'RecordID' : true)">
+                            <b-row v-if="!isObject(AHJ.Contacts[i].Address[nameContactAddress]) && (mode === 'create' ? nameContactAddress !== 'RecordID' : true)">
                               <b-col cols="4">
                                 <label>{{ nameContactAddress === "RecordID" ? "Address ID" : formatFieldNames(nameContactAddress) }}:</label>
                               </b-col>
@@ -194,7 +194,7 @@
                       label-for="input-1"
                     >
                   <b-tabs card>
-                    <b-tab v-for="i in tabsEngReqRev" :key="'dyn-tab-' + i" :title="'Engineering Review Requirement ' + i">
+                    <b-tab v-for="i in tabsEngReqRev" :key="'dyn-tab-' + i" :title="'Engineering Review Requirement ' + getTabTitle('EngineeringReviewRequirement', i)">
                       <b-row>
                         <b-col>
                           <b-button size="sm" variant="danger" class="float-right" :disabled="editPageViewOnly" @click="closeTabEngReqReq(i)">Delete</b-button>
@@ -251,6 +251,7 @@ export default {
       tabsEngReqRev: [],
       tabCounterEngReqRev: 0,
       AHJ: {},
+      unconfirmedRecordEdits: [],
       choiceFields: constants.CHOICE_FIELDS
     }
   },
@@ -265,6 +266,7 @@ export default {
         this.AHJ = this.deepCopyObject(constants.AHJ_FIELDS);
       } else if (this.mode === 'update') {
         this.AHJ = this.setAHJFieldsFromResponse(this.selectedAHJ);
+        // this.getUnconfirmedRecordEdits();
         this.setTabCounts();
         this.recordLoading = false;
       }
@@ -289,6 +291,16 @@ export default {
         this.beforeEditAHJRecord = this.setAHJFieldsFromResponse(response.data);
         this.AHJ = this.deepCopyObject(this.beforeEditAHJRecord);
         this.setTabCounts();
+        this.recordLoading = false;
+      });
+    },
+    getUnconfirmedRecordEdits() {
+      axios.get(this.$store.state.apiURL + "edit/" + "?RecordID__in=" + this.AHJ.RecordID + "&IsConfirmed__in=None", {
+        headers: {
+          Authorization: this.constants.TOKEN_AUTH
+        }
+      }).then(response => {
+        this.unconfirmedRecordEdits = response.results;
         this.recordLoading = false;
       });
     },
@@ -499,11 +511,25 @@ export default {
     isObject(item) {
       return typeof item === "object";
     },
-    checkObjectOrArray(item) {
-      return this.isObject(item) || this.isArray(item);
-    },
     getBFormInputPlaceholder(fieldName) {
       return "Enter a " + this.formatFieldNames(fieldName) + "...";
+    },
+    getTabTitle(type, index) {
+      if (type === "Contact") {
+        let RecordID = this.AHJ.Contacts[index].RecordID;
+        if (RecordID) {
+          return RecordID;
+        } else {
+          return "(new)";
+        }
+      } else if (type === "EngineeringReviewRequirement") {
+        let RecordID = this.AHJ.EngineeringReviewRequirements[index].RecordID;
+        if (RecordID) {
+          return RecordID;
+        } else {
+          return "(new)"
+        }
+      }
     },
     formatFieldNames(name) {
       let result = "";
@@ -541,18 +567,10 @@ export default {
 </script>
 
 <style scoped>
-/* .container {
-  height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 54px 1fr 50px;
-} */
 
-/* .card {
-  margin-top: 25px;
-  height: 750px;
-  width: 100%;
-  border: #d3d3d3 solid 1px;
-  overflow-y: auto;
-} */
+.nav-tabs, .nav-link, .nav-link.active {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
 </style>

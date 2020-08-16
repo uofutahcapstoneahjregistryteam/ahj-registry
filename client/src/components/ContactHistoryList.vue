@@ -74,6 +74,9 @@ export default {
     this.$store.commit("setApiUrlAddon", "history/contact/");
     this.$store.commit("callAPI");
   },
+  beforeDestroy() {
+    this.$store.commit("deleteAPIData");
+  },
   computed: {
     apiData() {
       return this.$store.state.apiData;
