@@ -18,7 +18,6 @@
       <div class="form-group">
         <select v-model="query_data.view">
           <option value="latest">Latest</option>
-          <option value="highest_voted">Highest Voted</option>
           <option value="confirmed">Confirmed</option>
         </select>
       </div>

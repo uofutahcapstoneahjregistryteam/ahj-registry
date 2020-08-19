@@ -35,7 +35,7 @@
                         </div>
                         <b-row>
                           <b-col>
-                            <b-button v-if="AHJ.Address === null" @click="addAddress(AHJ)">Add Address</b-button>
+                            <b-button v-if="!editPageViewOnly && AHJ.Address === null" @click="addAddress(AHJ)">Add Address</b-button>
                           </b-col>
                         </b-row>
                         </b-card-body>
@@ -63,7 +63,7 @@
                               </div>
                               <b-row>
                                 <b-col>
-                                  <b-button v-if="AHJ.Address.Location === null" @click="addLocation(AHJ.Address)">Add Location</b-button>
+                                  <b-button v-if="!editPageViewOnly && AHJ.Address.Location === null" @click="addLocation(AHJ.Address)">Add Location</b-button>
                                 </b-col>
                               </b-row>
                           </b-card-body>
@@ -123,7 +123,7 @@
                           </div>
                           <b-row>
                             <b-col>
-                              <b-button v-if="AHJ.Contacts[i].Address === null" @click="addAddress(AHJ.Contacts[i])">Add Address</b-button>
+                              <b-button v-if="!editPageViewOnly && AHJ.Contacts[i].Address === null" @click="addAddress(AHJ.Contacts[i])">Add Address</b-button>
                             </b-col>
                           </b-row>
                         </b-card-body>
@@ -151,7 +151,7 @@
                               </div>
                               <b-row>
                                 <b-col>
-                                  <b-button v-if="AHJ.Contacts[i].Address.Location === null" @click="addLocation(AHJ.Contacts[i].Address)">Add Location</b-button>
+                                  <b-button v-if="!editPageViewOnly && AHJ.Contacts[i].Address.Location === null" @click="addLocation(AHJ.Contacts[i].Address)">Add Location</b-button>
                                 </b-col>
                               </b-row>
                           </b-card-body>
