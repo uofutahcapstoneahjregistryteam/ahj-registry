@@ -335,9 +335,9 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     identifier = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    email_address = models.CharField(max_length=30, unique=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
+    email_address = models.CharField(max_length=255, unique=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
