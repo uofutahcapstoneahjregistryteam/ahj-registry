@@ -3,6 +3,7 @@
     <form @submit.prevent>
       <div class="form-group">
         <input type="text" class="form-control keyword_search" v-model="searchKeyword" placeholder="Search..." @keyup.enter="updateQuery" />
+        <input class ="form-control keyword_search" v-model="query_data.AHJCode" placeholder="AHJ Code..." @keyup.enter="updateQuery" />
         <input class ="form-control keyword_search" v-model="query_data.AHJID" placeholder="AHJID..." @keyup.enter="updateQuery" />
         <input type="text" class="form-control keyword_search" v-model="query_data.Address" placeholder="Address..." />
         <!-- <b-row>
@@ -53,6 +54,7 @@ export default {
     return {
       query_data: {
         view: "latest",
+        AHJCode: "",
         AHJID: "",
         Address: "",
         Longitude: "",
@@ -122,7 +124,9 @@ export default {
     clearFilters() {
       this.$store.commit("toggleAPILoading");
       this.searchKeyword = "";
+      this.query_data.AHJCode = "";
       this.query_data.AHJID = "";
+      this.query_data.Address = "";
       this.query_data.City = "";
       this.query_data.County = "";
       this.query_data.StateProvince = "";

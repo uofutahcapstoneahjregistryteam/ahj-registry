@@ -68,6 +68,7 @@ class AddressFilter(df_filters.BaseInFilter):
 
 class AHJFilter(filters.FilterSet, rf_filters.SearchFilter):
     AHJID__in = df_filters.UUIDFilter(field_name='AHJID')
+    AHJCode__in = df_filters.UUIDFilter(field_name='AHJCode', lookup_expr='in')
     BuildingCode__in = CharInFilter(field_name='BuildingCode', lookup_expr='in')
     ElectricCode__in = CharInFilter(field_name='ElectricCode', lookup_expr='in')
     FireCode__in = CharInFilter(field_name='FireCode', lookup_expr='in')

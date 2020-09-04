@@ -136,7 +136,9 @@ class EngineeringReviewRequirementSerializer(serializers.Serializer):
 
 class AHJSerializer(serializers.Serializer):
     AHJID = EditSerializerHelper(source='*', required=False)
+    AHJCode = EditSerializerHelper(source='*', required=False)
     AHJName = EditSerializerHelper(source='*', required=False)
+    AHJLevelCode = EditSerializerHelper(source='*', required=False)
     BuildingCode = EditSerializerHelper(source='*', required=False)
     BuildingCodeNotes = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)

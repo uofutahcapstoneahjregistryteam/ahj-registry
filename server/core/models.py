@@ -91,7 +91,9 @@ def check_record_edit_create_confirmed(record):
 
 class AHJ(models.Model):
     mpoly = models.ForeignKey(Polygon, null=True, on_delete=models.DO_NOTHING)
+    AHJCode = models.CharField(blank=True, max_length=20)
     AHJID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    AHJLevelCode = models.CharField(blank=True, max_length=3)
     AHJName = models.CharField(blank=True, max_length=100)
     BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
     BuildingCodeNotes = models.CharField(blank=True, max_length=255)
