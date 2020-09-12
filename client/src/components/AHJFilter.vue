@@ -72,10 +72,10 @@ export default {
   methods: {
     updateQuery() {
       // Create select filter query
-      let selectFilterString = "?";
+      let selectFilterString = "&";
       Object.keys(this.query_data).forEach(key => {
         if (this.query_data[key].length != 0) {
-          if (selectFilterString == "?") {
+          if (selectFilterString == "&") {
             if(key === "view") {
               selectFilterString += key + "=";
             } else {
@@ -108,14 +108,14 @@ export default {
       }
 
       // Combine queries
-      if (selectFilterString == "?") {
+      if (selectFilterString == "&") {
         selectFilterString = selectFilterString + searchString;
       } else {
         selectFilterString = selectFilterString + "&" + searchString;
       }
 
       // Don't search if no keywords or filters were provided
-      if (selectFilterString === "?") {
+      if (selectFilterString === "&") {
         return;
       }
       this.$store.commit("toggleAPILoading");

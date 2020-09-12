@@ -97,6 +97,7 @@ class AHJ(models.Model):
     AHJName = models.CharField(blank=True, max_length=100)
     BuildingCode = models.CharField(choices=BUILDING_CODE_CHOICES, blank=True, default='', max_length=45)
     BuildingCodeNotes = models.CharField(blank=True, max_length=255)
+    DataSourceComments = models.TextField(blank=True)
     Description = models.TextField(blank=True)
     DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
     DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)

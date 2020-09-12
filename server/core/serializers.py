@@ -6,8 +6,8 @@ from .models import *
 class EditSerializerHelper(serializers.Field):
     def to_representation(self, value):
         if value.__class__.__name__ == self.field_name[0:-2] and self.field_name[-2:].lower() == 'id':
-            return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating'])).data
-        return EditSerializer(value.get_edit(self.field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating'])).data
+            return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
+        return EditSerializer(value.get_edit(self.field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
 
     def to_internal_value(self, data):
         pass
@@ -49,6 +49,17 @@ class EditSerializer(serializers.Serializer):
     ModifyingUserID = UserSerializer(source='get_user_modify', required=False, read_only=True)
     ModifiedDate = serializers.DateTimeField(required=False, read_only=True)
     VoteRating = serializers.IntegerField(required=False, read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        hide_ui_fields = kwargs.pop('hide_ui_fields', True)
+        super(EditSerializer, self).__init__(*args, **kwargs)
+
+        if hide_ui_fields is True:
+            excluded_field_names = ['EditID', 'RecordID', 'RecordType', 'EditType', 'ParentID', 'ParentRecordType',
+                                    'PreviousValue', 'FieldName', 'IsConfirmed', 'ConfirmingUserID', 'ModifyingUserID',
+                                    'ModifiedDate', 'VoteRating']
+            for field in excluded_field_names:
+                self.fields.pop(field)
 
     def update(self, instance, validated_data):
         pass
@@ -141,6 +152,7 @@ class AHJSerializer(serializers.Serializer):
     AHJLevelCode = EditSerializerHelper(source='*', required=False)
     BuildingCode = EditSerializerHelper(source='*', required=False)
     BuildingCodeNotes = EditSerializerHelper(source='*', required=False)
+    DataSourceComments = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
     DocumentSubmissionMethod = EditSerializerHelper(source='*', required=False)
     DocumentSubmissionMethodNotes = EditSerializerHelper(source='*', required=False)
