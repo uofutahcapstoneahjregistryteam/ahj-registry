@@ -68,7 +68,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware'
+    'simple_history.middleware.HistoryRequestMiddleware',
+    'request_logging.middleware.LoggingMiddleware'
 ]
 
 # Add allowed hosts that can connect to this API. Add the host IP of the web app connecting to this API.
@@ -82,6 +83,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
     ],
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
@@ -155,6 +159,39 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+
+REQUEST_LOGGING_ENABLE_COLORIZE = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+            'verbose': {
+                'format': '{levelname}\t{request.user}\t{asctime}\t{message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{request.user}\t{message}',
+                'style': '{',
+            },
+        },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/apilogs.txt'),
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 
 # Static files (CSS, JavaScript, Images)

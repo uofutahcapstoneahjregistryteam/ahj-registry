@@ -7,7 +7,7 @@ export default {
   API_ENDPOINT: API_ENDPOINT,
   TOKEN_AUTH: TOKEN_AUTH,
   AHJ_FIELDS: {
-    RecordID: "",
+    AHJCode: "",
     AHJName: "",
     BuildingCode: "",
     BuildingCodeNotes: "",
@@ -24,6 +24,8 @@ export default {
     FileFolderURL: "",
     URL: "",
     Description: "",
+    AHJLevelCode: "",
+    RecordID: "",
     Address: null,
     Contacts: [],
     EngineeringReviewRequirements: []

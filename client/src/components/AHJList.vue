@@ -38,8 +38,36 @@ export default {
     return {
       fields: [
         {
+          key: "AHJCode.Value",
+          label: "AHJ Code",
+          thStyle: { width: "274px" },
+          class: "text-center",
+          thClass: ".col-field-styling"
+        },
+        {
           key: "AHJName.Value",
           label: "AHJ Name",
+          thStyle: { width: "274px" },
+          class: "text-center",
+          thClass: ".col-field-styling"
+        },
+        {
+          key: "Address.County.Value",
+          label: "County",
+          thStyle: { width: "274px" },
+          class: "text-center",
+          thClass: ".col-field-styling"
+        },
+        {
+          key: "Address.StateProvince.Value",
+          label: "State/Province",
+          thStyle: { width: "274px" },
+          class: "text-center",
+          thClass: ".col-field-styling"
+        },
+        {
+          key: "Address.Country.Value",
+          label: "Country",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
@@ -133,27 +161,6 @@ export default {
           thClass: ".col-field-styling"
         },
         {
-          key: "Address.County.Value",
-          label: "County",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
-        {
-          key: "Address.Country.Value",
-          label: "Country",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
-        {
-          key: "Address.StateProvince.Value",
-          label: "State/Province",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
-        {
           key: "Address.ZipPostalCode.Value",
           label: "ZIP Postal Code",
           thStyle: { width: "274px" },
@@ -193,6 +200,7 @@ export default {
           label: "AHJ ID",
           thStyle: { width: "274px" },
           class: "text-center",
+          formatter: this.ahjidTruncateFormatter,
           thClass: ".col-field-styling"
         },
       ],
@@ -259,6 +267,12 @@ export default {
           return "No Solar Regulations";
         }
         return value.substring(0, 4) + " " + value.substring(4);
+      }
+      return value;
+    },
+    ahjidTruncateFormatter(value) {
+      if(value) {
+        return "***" + value.substring(value.length - 12);
       }
       return value;
     },

@@ -20,7 +20,7 @@ def filter_ahjs_by_location(longitude, latitude, **kwargs):
             covers_poly_set.append(poly)
 
     # Combine all of the AHJ's with the found names into one QuerySet
-    return AHJ.objects.filter(mpoly__in=covers_poly_set).order_by('mpoly__ALAND')
+    return AHJ.objects.filter(mpoly__in=covers_poly_set).order_by('-AHJLevelCode')
 
 
 def get_orange_button_value_primitive(field):

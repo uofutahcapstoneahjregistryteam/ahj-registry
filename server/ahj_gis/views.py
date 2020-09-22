@@ -15,7 +15,7 @@ gmaps = Client(key=GOOGLE_GEOCODING_API_KEY)
 @api_view(['POST'])
 def find_ahj_location(request):
     if request.auth is None:
-        return Response(request.detail)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
 
     if request.data.get('Location') is None:
         # The data is an Location
@@ -41,7 +41,7 @@ def find_ahj_location(request):
 @api_view(['POST'])
 def find_ahj_address(request):
     if request.auth is None:
-        return Response(request.detail)
+        return Response({'detail': 'No authentication provided'}, status=status.HTTP_401_UNAUTHORIZED)
 
     addr_line_1 = get_orange_button_value_primitive(request.data.get('AddrLine1', ''))
     addr_line_2 = get_orange_button_value_primitive(request.data.get('AddrLine2', ''))

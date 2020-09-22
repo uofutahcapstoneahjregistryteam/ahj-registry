@@ -27,7 +27,7 @@
                               <label>{{ AHJ[nameAHJ] }}</label>
                             </b-col>
                             <b-col cols="8" v-else>
-                              <label v-if="nameAHJ === 'RecordID'">{{ AHJ[nameAHJ] }}</label>
+                              <label v-if="nameAHJ === 'RecordID' || nameAHJ === 'AHJCode'">{{ AHJ[nameAHJ] }}</label>
                               <b-form-select v-else-if="choiceFields.AHJ[nameAHJ]" v-model="AHJ[nameAHJ]" :options="choiceFields.AHJ[nameAHJ]" />
                               <b-form-input v-else v-model="AHJ[nameAHJ]" type="text" :placeholder="getBFormInputPlaceholder(nameAHJ)" />
                             </b-col>
@@ -539,6 +539,10 @@ export default {
       }
       index--;
       result += name.substring(0, index);
+      if (name.substring(0, 3) === "AHJ") {
+        result += "AHJ ";
+        name = name.substring(3);
+      }
       for (let i = index; i < name.length; i++) {
         if (/([^A-Za-z0-9\.\$]+)|([A-Z])(?=[A-Z][a-z])|([A-Za-z])(?=\$?[0-9]+(?:\.[0-9]+)?)|([0-9])(?=[^\.0-9])|([a-z])(?=[A-Z])/.test(name.substring(index, i))) {
           result += name.substring(index, i - 1) + " ";

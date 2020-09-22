@@ -36,7 +36,7 @@ export default new Vuex.Store({
   },
   mutations: {
     callAPI(state, payload) {
-      let url = state.apiURL + state.apiURLAddon;
+      let url = state.apiURL + state.apiURLAddon + '?hide_ui_fields=False';
       if (payload == null) {
         axios
           .get(url, {
@@ -63,7 +63,7 @@ export default new Vuex.Store({
             }
             state.dataReady = true;
           });
-      } else if (payload.charAt(0) == "?") {
+      } else if (payload.charAt(0) == "&") {
         state.queryString = payload;
 
         let query_string = url + payload;
