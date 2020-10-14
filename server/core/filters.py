@@ -44,7 +44,9 @@ class LocationFilter(df_filters.BaseInFilter):
         try:
             longitude = float(value[0])
             latitude = float(value[1])
-            return ahj_gis_utils.filter_ahjs_by_location(longitude, latitude, ahjs_to_search=qs)
+            ahjs_to_search=qs.values_list('AHJID', flat=True)
+            return ahj_gis_utils.filter_ahjs_by_location(longitude, latitude,
+                                                         ahjs_to_search=ahjs_to_search)
         except ValueError:
             return qs
 
@@ -62,7 +64,9 @@ class AddressFilter(df_filters.BaseInFilter):
             coordinates = geocode_result[x]['geometry']['location']
             longitude = coordinates['lng']
             latitude = coordinates['lat']
-            ahj_qs |= ahj_gis_utils.filter_ahjs_by_location(longitude, latitude, ahjs_to_search=qs)
+            ahjs_to_search=qs.values_list('AHJID', flat=True)
+            ahj_qs |= ahj_gis_utils.filter_ahjs_by_location(longitude, latitude,
+                                                            ahjs_to_search=ahjs_to_search)
         return ahj_qs
 
 
