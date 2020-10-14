@@ -9,8 +9,7 @@ def filter_ahjs_by_location(longitude, latitude, **kwargs):
 
     # Filter by intersects
     if kwargs.get('ahjs_to_search', None) is not None:
-        intersects_poly_set = Polygon.objects.filter(ahj__AHJID__in=kwargs['ahjs_to_search'])
-                                             .filter(mpoly__intersects=coordinate)
+        intersects_poly_set = Polygon.objects.filter(ahj__AHJID__in=kwargs['ahjs_to_search']).filter(mpoly__intersects=coordinate)
     else:
         intersects_poly_set = Polygon.objects.filter(mpoly__intersects=coordinate)
     covers_poly_set = []
