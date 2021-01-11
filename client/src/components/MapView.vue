@@ -17,64 +17,140 @@ export default {
   data() {
     return {
       leafletMap: null,
-      locationMarker: null,
       polygonLayer: null,
+      currSearchMarker: null,
       markerLayerGroup: null
     };
   },
   methods: {
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+    showAlert() {
+      this.dismissCountDown = this.dismissSecs;
+    },
     /*
      * Initialize the leaflet map and set it as the store's leaflet map
      */
     setupLeafletMap() {
-      this.leafletMap = L.map("mapdiv").setView(constants.MAP_INIT_CENTER, constants.MAP_INIT_ZOOM);
-      L.tileLayer(constants.MAP_TILE_API_URL,{
+      this.leafletMap = L.map("mapdiv").setView(
+        constants.MAP_INIT_CENTER,
+        constants.MAP_INIT_ZOOM
+      );
+      L.tileLayer(constants.MAP_TILE_API_URL, {
         attribution: constants.MAP_TILE_API_ATTR
       }).addTo(this.leafletMap);
       this.markerLayerGroup = L.layerGroup().addTo(this.leafletMap);
     },
-    addPolygonLayer() {
-      let polygons = this.$store.state.apiData.results.ahjlist
-        .map(ahj => ahj.mpoly)
-        .filter(mpoly => mpoly !== null);
+    // Replace map's existing polygons and markers with ones from the new search
+    updateMap(ahjlist) {
+      let missingPolygon = false;
+      ahjlist = ahjlist.filter(ahj => {
+        if (ahj.mpoly === null) {
+          missingPolygon = true;
+          return false;
+        } else {
+          return true;
+        }
+      });
+      if (missingPolygon) {
+        console.log("polygon is missing");
+      }
+      this.markerLayerGroup.clearLayers();
+      this.addPolygonLayer(ahjlist);
+      this.updateMapMarkers(ahjlist);
+    },
+    addPolygonLayer(ahjlist) {
+      let polygons = ahjlist.map(ahj => ahj.mpoly);
+      if (polygons.length === 0) {
+        return;
+      }
       this.polygonLayer = L.geoJSON(polygons, {
         style: constants.MAP_PLYGN_SYTLE
       });
       this.polygonLayer.addTo(this.leafletMap);
-      this.$store.state.polygons = polygons;
-      this.$store.state.currPolyInd = 0;
       let initialPolygonSelected = polygons[0];
-      // This triggers the watch for selectedAHJID below to select the polygon
-      this.$store.commit("setSelectedAHJIDFromTable", initialPolygonSelected.properties.AHJID);
-      for (let i = 0; i < polygons.length; i++) {
-        L.marker([
-          polygons[i].properties.INTPTLAT,
-          polygons[i].properties.INTPTLON
-        ])
-          .bindTooltip(
-            "The Registry does not \n have Address or Contact Info \n for this AHJ."
-          )
-          .addTo(this.markerLayerGroup);
-      }
+      this.selectPolygon(initialPolygonSelected.properties.AHJID);
     },
-    selectPolygon(polygonAHJID, oldPolygonAHJID) { // TODO: pass polygon so that clicking on table adds mpoly to map (when address hasn't been searched)
+    selectPolygon(newAHJID) {
       let map = this.leafletMap;
       map.eachLayer(function(layer) {
         if (layer.feature) {
-          if (layer.feature.properties.AHJID === polygonAHJID) {
+          if (layer.feature.properties.AHJID === newAHJID) {
             map.fitBounds(layer.getBounds());
             layer.setStyle(constants.MAP_PLYGN_SLCTD_SYTLE());
-          } else if (layer.feature.properties.AHJID === oldPolygonAHJID) {
+          } else {
             layer.setStyle(constants.MAP_PLYGN_SYTLE());
           }
         }
       });
     },
+    updateMapMarkers(ahjlist) {
+      let location = this.$store.state.apiData.results.Location;
+      if (location["Latitude"] !== null) {
+        let searchMarker = L.AwesomeMarkers.icon({
+          icon: "circle",
+          prefix: "fa",
+          markerColor: "cadetblue"
+        });
+        let searchedLocation = [
+          location["Latitude"],
+          location["Longitude"]
+        ];
+        this.currSearchMarker = L.marker(searchedLocation, {
+          icon: searchMarker
+        })
+          .bindTooltip("Searched Address")
+          .addTo(this.leafletMap);
+      }
+      for (let ahj of ahjlist) {
+        let polygon = ahj.mpoly;
+        let ahjMarker = L.AwesomeMarkers.icon({
+          icon: "building",
+          prefix: "fa",
+          markerColor: this.selectMarkerColor(polygon)
+        });
+        let polygonInternalPoint = [
+          polygon.properties.INTPTLAT,
+          polygon.properties.INTPTLON
+        ];
+        let marker = L.marker(polygonInternalPoint, {
+          icon: ahjMarker,
+          riseOnHover: true
+        })
+          .bindTooltip(`<b>${ahj.AHJName.Value}</b><br><b>Address</b>: The AHJ Registry does not have an Address for this AHJ`)
+          .addTo(this.markerLayerGroup);
+        let that = this;
+        marker.on("click", function() {
+          that.$store.commit("setSelectedAHJ", ahj);
+        });
+      }
+    },
+    selectMarkerColor(polygon) {
+      switch (polygon.properties.GEOID.length) {
+        case 7: // the polygon is a city/place
+          return "lightblue";
+        case 5: // the polygon is a county
+          return "blue";
+        case 2: // the polygon is a state
+          return "darkblue";
+        default:
+          return "blue"; // ??
+      }
+    },
     resetLeafletMapLayers() {
       if (this.polygonLayer !== null) {
         this.polygonLayer.removeFrom(this.leafletMap);
+        this.polygonLayer = null;
+      }
+      if (this.currSearchMarker !== null) {
+        this.leafletMap.removeLayer(this.currSearchMarker);
+        this.currSearchMarker = null;
       }
       this.markerLayerGroup.clearLayers();
+    },
+    resetMapView() {
+      this.leafletMap.setView(constants.MAP_INIT_CENTER, constants.MAP_INIT_ZOOM);
     }
   },
   /*
@@ -84,28 +160,29 @@ export default {
     this.setupLeafletMap();
   },
   watch: {
-    "$store.state.apiLoading": function(newVal) {
-      if (newVal === false) {
-        let location = this.$store.state.apiData.results.Location;
-        if (location["Latitude"] !== null) {
-          let latlngArray = [location["Latitude"], location["Longitude"]];
-          this.resetLeafletMapLayers();
-          this.addPolygonLayer();
-          if (this.locationMarker === null) {
-            this.locationMarker = L.marker(latlngArray, {
-              icon: constants.MAP_SEARCHED_ADDR_ICON
-            })
-              .bindTooltip("entered address")
-              .addTo(this.leafletMap);
+    "$store.state.selectedAHJ": function(newVal) {
+      if (newVal === null) {
+        // the search filter was cleared, and selectedAHJ reset to null
+        this.locationSearched = false;
+        this.resetLeafletMapLayers();
+        this.resetMapView();
+      } else {
+        if (this.$store.state.apiData.results.Location["Latitude"] !== null) { // check if a location/address was searched
+          if (this.polygonLayer === null) {
+            this.updateMap(this.$store.state.apiData.results.ahjlist);
           } else {
-            this.locationMarker.setLatLng(latlngArray);
+            // there are multiple polygons on the map at once to select
+            this.selectPolygon(newVal.AHJID.Value);
           }
-          this.leafletMap.setView(latlngArray);
+        } else {
+          // there is one polygon at a time on the map
+          this.resetLeafletMapLayers();
+          this.updateMap([newVal]);
         }
       }
     },
-    "$store.state.selectedAHJID": function(newVal, oldVal) {
-      this.selectPolygon(newVal, oldVal);
+    "$store.state.showTable": function() {
+      this.leafletMap.invalidateSize(true);
     }
   }
 };

@@ -7,8 +7,8 @@
         class="ahj-table"
         selectable
         :select-mode="'single'"
-        @row-selected="onRowSelected"
-        striped
+        selected-variant=""
+        @row-clicked="onRowClicked"
         hover
         outlined
         small
@@ -22,19 +22,19 @@
             <strong>&nbsp; Loading...</strong>
           </div>
         </template>
+        <template v-slot:cell(more_info)="row">
+          <b-button size="sm" @click="row.toggleDetails" class="mr-2">
+            {{ row.detailsShowing ? "Hide" : "Show" }}
+          </b-button>
+        </template>
+        <template #row-details="row">
+          <b-card>
+            <component-edit-page ref="editpage" :mode="editPageMode" :selectedAHJ="row.item"></component-edit-page>
+          </b-card>
+        </template>
       </b-table>
     </div>
     <component-pagination class="pagination" id="bottom-buttons"></component-pagination>
-    <b-modal size="xl" v-model="showEditPageModal">
-      <template v-slot:modal-header>
-        <b-button :disabled="!editPageViewOnly" size="md" variant="danger" @click="tryEnterEditPageEditMode">Edit this AHJ</b-button>
-      </template>
-      <template v-slot:modal-footer>
-      <b-button size="sm" variant="primary" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="$refs.editpage.onSubmit(); showEditPageModal = false;">Submit</b-button>
-      <b-button size="sm" variant="danger" :disabled="editPageViewOnly || $refs.editpage.recordLoading" @click="showEditPageModal = false">Cancel</b-button>
-    </template>
-      <component-edit-page ref="editpage" :editPageViewOnly="editPageViewOnly" :mode="editPageMode" :selectedAHJ="selectedAHJ"></component-edit-page>
-    </b-modal>
   </div>
 </template>
 
@@ -67,13 +67,6 @@ export default {
         {
           key: "Address.County.Value",
           label: "County",
-          thStyle: { width: "274px" },
-          class: "text-center",
-          thClass: ".col-field-styling"
-        },
-        {
-          key: "Address.StateProvince.Value",
-          label: "State/Province",
           thStyle: { width: "274px" },
           class: "text-center",
           thClass: ".col-field-styling"
@@ -117,19 +110,12 @@ export default {
           class: "text-center",
           formatter: this.ahjCodeFormatter,
           thClass: ".col-field-styling"
-        }
+        },
+        "more_info"
       ],
-      selectedAHJ: {},
-      editPageMode: "",
-      editPageHeader: "",
-      editPageViewOnly: true,
-      showEditPageModal: false
+      editPageMode: "update",
+      editPageViewOnly: true
     };
-  },
-  beforeCreate() {
-    this.$store.commit("setApiUrlAddon", "ahj-private/");
-    this.$store.commit("setAPILoading", true);
-    this.$store.commit("callAPI");
   },
   beforeDestroy() {
     this.$store.commit("deleteAPIData");
@@ -155,27 +141,8 @@ export default {
     }
   },
   methods: {
-    onRowSelected(items) {
-      for (let i = 0; i < this.$refs.selectableTable.selectedRows.length; i++) {
-        if (this.$refs.selectableTable.selectedRows[i]) {
-          this.$store.commit("setSelectedAHJIDFromTable", items[0].AHJID.Value);
-          this.selectedAHJ = items[0];
-          this.editPageMode = "update";
-          this.editPageHeader = "Edit an AHJ";
-          this.editPageViewOnly = true;
-          this.showEditPageModal = true;
-          this.$refs.selectableTable.selectedRows[i] = false; // this causes onRowSelected to be called again
-          return;
-        }
-      }
-    },
-    tryEnterEditPageEditMode() {
-      if (this.$store.state.loginStatus.status !== "success") {
-        this.$store.commit("setShowLoginModal", true);
-        return;
-      }
-      this.$refs.editpage.getConfirmedAHJRecord();
-      this.editPageViewOnly = false;
+    onRowClicked(rowItem) {
+      this.$store.commit("setSelectedAHJ", rowItem);
     },
     ahjCodeFormatter(value) {
       if(value) {
@@ -183,12 +150,6 @@ export default {
           return "No Solar Regulations";
         }
         return value.substring(0, 4) + " " + value.substring(4);
-      }
-      return value;
-    },
-    ahjidTruncateFormatter(value) {
-      if(value) {
-        return "***" + value.substring(value.length - 12);
       }
       return value;
     },
@@ -200,6 +161,23 @@ export default {
       this.$store.commit("toggleAPILoading");
 
       return this.$store.commit("callAPI", this.$store.state.previousPage);
+    },
+    selectRow(ahj) {
+      if (!this.$store.state.apiLoading) {
+        let ahjlist = this.$store.state.apiData.results.ahjlist;
+        for (let i = 0; i < ahjlist.length; i++) {
+          if (ahjlist[i].AHJID.Value === ahj.AHJID.Value) {
+            this.$refs.selectableTable.selectRow(i);
+          }
+        }
+      }
+    }
+  },
+  watch: {
+    "$store.state.selectedAHJ": function(newVal) {
+      if (newVal !== null) {
+        this.selectRow(newVal);
+      }
     }
   }
 };
@@ -212,7 +190,7 @@ export default {
 
 .ahj-public-list {
   height: 78vh;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
 @keyframes spin {
@@ -250,5 +228,21 @@ a {
 
 .ahj-table {
   margin-left: 0px;
+}
+
+::v-deep .table > tbody > tr.b-table-row-selected {
+  border: 3px solid #85e9f2;
+}
+
+::v-deep .table.b-table.table-hover > tbody > tr:hover td {
+  background-color: #e3fcf9;
+}
+
+::v-deep .table > tbody > tr:nth-child(odd){
+  background-color: #fff2e5;
+}
+
+::v-deep .table > tbody > tr:nth-child(even) {
+  background-color: #ffffff;
 }
 </style>

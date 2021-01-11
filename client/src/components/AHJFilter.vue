@@ -27,7 +27,7 @@
           <b-form-select v-model="query_data.ElectricCode" :options="choiceFields.AHJ.ElectricCode" multiple
                          :select-size="2"/>
           <h2>Fire Codes</h2>
-          <b-form-select v-model="query_data.FireCode" :options="choiceFields.AHJ.FireCode" multiple :select-size="3"/>
+          <b-form-select v-model="query_data.FireCode" :options="choiceFields.AHJ.FireCode" multiple :select-size="2"/>
           <h2>Residential Codes</h2>
           <b-form-select v-model="query_data.ResidentialCode" :options="choiceFields.AHJ.ResidentialCode" multiple
                          :select-size="2"/>
@@ -36,7 +36,7 @@
         </div>
         <div class='ahjshow' @click='showahj'>
           <i id='plusbuttonAHJ' class="fas fa-plus"></i>
-          More Options
+          More Search Options
         </div>
         <div id="ahjdrop" class='dropdown-content'>
           <input id="ahjname" type="text" class="form-control search-input" v-model="query_data.AHJName"
@@ -90,7 +90,6 @@ export default {
   },
   methods: {
     updateQuery() {
-      // let queryString = "view=" + this.viewMode + "&";
       let queryString = "";
       Object.keys(this.query_data).forEach(key => {
         if(this.query_data[key] !== ""){
@@ -112,7 +111,8 @@ export default {
       });
       this.$store.commit("setQueryString", queryString);
       this.$store.commit("setAPILoading", true);
-      this.$store.commit("deleteAPIData");
+      // this.$store.commit("setSelectedAHJ", null);
+      // this.$store.commit("deleteAPIData");
       this.$store.commit("callAPI", queryString);
     },
     clearFilters() {
@@ -131,8 +131,9 @@ export default {
         WindCode: [],
         StateProvince: ""
       };
-      this.$store.commit("setQueryString", "");
-      this.$store.commit("updateCurrentPage", 1);
+      // this.$store.commit("setQueryString", "");
+      // this.$store.commit("updateCurrentPage", 1);
+      this.$store.commit("deleteAPIData");
     },
     show(){
       document.getElementById('drop').classList.toggle('show')

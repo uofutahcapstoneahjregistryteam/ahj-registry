@@ -21,4 +21,4 @@ class PolygonSerializer(geo_serializers.GeoFeatureModelSerializer):
         model = Polygon
         geo_field = 'mpoly'
         id_field = False
-        fields = ['AHJID', 'ALAND', 'INTPTLAT', 'INTPTLON']
+        fields = ['AHJID', 'ALAND', 'INTPTLAT', 'INTPTLON', 'GEOID']

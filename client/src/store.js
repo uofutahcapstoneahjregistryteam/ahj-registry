@@ -30,15 +30,19 @@ export default new Vuex.Store({
       authToken: ""
     },
     showLoginModal: false,
-    selectedAHJID: "",
+    selectedAHJ: null,
     resultsDownloading: false,
-    downloadCompletion: 0
+    downloadCompletion: 0,
+    showTable: false
   },
   getters: {
     apiData: state => state.apiData
   },
   mutations: {
     callAPI(state, payload) {
+      if (!state.showTable) {
+        state.showTable = true;
+      }
       // If another axios request has been made; cancel it
       if (state.cancelAPICallToken !== null) {
         state.cancelAPICallToken("previous request cancelled");
@@ -63,6 +67,7 @@ export default new Vuex.Store({
           state.hasPrevious = Boolean(response.data.previous);
           state.cancelAPICallToken = null;
           state.apiLoading = false;
+          state.selectedAHJ = state.apiData.results.ahjlist[0];
           state.dataReady = true;
         })
         .catch((/*err*/) => {
@@ -72,6 +77,9 @@ export default new Vuex.Store({
     deleteAPIData(state) {
       state.apiData = [];
       state.ahjCount = "";
+      state.selectedAHJ = null;
+      state.showTable = false;
+      state.queryString = "";
     },
     setShowLoginModal(state, payload) {
       state.showLoginModal = payload;
@@ -138,8 +146,10 @@ export default new Vuex.Store({
     changeUserLoginStatus(state, payload) {
       state.loginStatus = payload;
     },
-    setSelectedAHJIDFromTable(state, ahjid) {
-      state.selectedAHJID = ahjid;
+    setSelectedAHJ(state, ahj) {
+      console.log('in store selectAHJ');
+      console.log(ahj);
+      state.selectedAHJ = ahj;
     }
   }
 });

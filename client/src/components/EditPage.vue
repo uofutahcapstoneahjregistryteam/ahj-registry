@@ -1,5 +1,10 @@
 <template>
   <b-container>
+    <b-row>
+      <b-col>
+        <b-button v-if="editPageViewOnly" size="sm" variant="danger" @click="tryEnterEditPageEditMode">Edit this AHJ</b-button>
+      </b-col>
+    </b-row>
     <b-row v-if="recordLoading">
       <div class="text-center text-primary my-2">
         <b-spinner class="align-middle"></b-spinner>
@@ -235,14 +240,13 @@ import constants from "../constants.js";
 export default {
   props: [
     'mode',
-    'editPageViewOnly',
     'selectedAHJ'
   ],
   data() {
     return {
       constants: constants,
       recordLoading: true,
-      editMode: false,
+      editPageViewOnly: true,
       beforeEditAHJRecord: {},
       EditTypeAndRecordTypeAndRecordID: "",
       requestType: "post",
@@ -270,6 +274,14 @@ export default {
         this.setTabCounts();
         this.recordLoading = false;
       }
+    },
+    tryEnterEditPageEditMode() {
+      if (this.$store.state.loginStatus.status !== "success") {
+        this.$store.commit("setShowLoginModal", true);
+        return;
+      }
+      this.getConfirmedAHJRecord();
+      this.editPageViewOnly = false;
     },
     onSubmit() {
       if (this.mode === "create") {
@@ -317,9 +329,8 @@ export default {
       }
     },
     setAHJFieldsFromResponse(record) {
-      delete record["mpoly"]; // do not include the AHJ's polygon
       let result = {};
-      Object.keys(record).forEach(key => {
+      Object.keys(record).filter(key => key !== "mpoly").forEach(key => { // do not include mpoly for now
         let field = record[key];
         if (field) {
           if (field.hasOwnProperty("Value")) {
@@ -402,7 +413,7 @@ export default {
             Authorization: this.$store.state.loginStatus.authToken
           }
         }).then(response => {
-          
+
         }).catch(error => {
         });
       }
@@ -427,7 +438,7 @@ export default {
           Authorization: this.$store.state.loginStatus.authToken
         }
       }).then(response => {
-        
+
       }).catch(error => {
       });
     },
@@ -528,7 +539,7 @@ export default {
         if (RecordID) {
           return RecordID;
         } else {
-          return "(new)"
+          return "(new)";
         }
       }
     },
@@ -572,10 +583,5 @@ export default {
 </script>
 
 <style scoped>
-
-.nav-tabs, .nav-link, .nav-link.active {
-  padding-left: 10px;
-  padding-right: 10px;
-}
 
 </style>

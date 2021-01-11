@@ -1,6 +1,6 @@
 <template>
   <div class="ahj-search-container">
-    <div class="download-search-results">
+    <div class="download-search-results" v-show="$store.state.showTable">
       Download Search Results:
       <span v-if="$store.state.apiLoading">
         ...
@@ -19,7 +19,7 @@
         {{ $store.state.downloadCompletion }}%)
       </span>
     </div>
-    <div class="ahj-count">
+    <div class="ahj-count" v-show="$store.state.showTable">
       <br />
       <strong>
         {{ ahjCount ? ahjCount : "..." }} Authorities Having Jurisdiction</strong>
@@ -27,7 +27,7 @@
     <div class="ahj-search-sidebar">
       <component-ahj-map></component-ahj-map>
     </div>
-    <div class="ahj-search-body">
+    <div class="ahj-search-body" v-show="$store.state.showTable">
       <component-ahj-list></component-ahj-list>
     </div>
   </div>
@@ -37,6 +37,9 @@
 import MapView from "../components/MapView";
 import AHJList from "../components/AHJList.vue";
 export default {
+  mounted() {
+    this.$store.commit("setApiUrlAddon", "ahj-private/");
+  },
   components: {
     "component-ahj-list": AHJList,
     "component-ahj-map": MapView
@@ -57,23 +60,24 @@ export default {
 <style scoped>
 .ahj-search-container {
   display: grid;
-  grid-template-columns: 50% 50%;
+  grid-template-columns: auto fit-content(40%);
 }
 
 .ahj-search-sidebar {
   grid-column: 1;
   grid-row: 1 / 3;
-  padding-right: 1em;
 }
 
 .ahj-search-body {
   grid-column: 2;
   grid-row: 1 / span 2;
+  padding-left: 1em;
 }
 
 .download-search-results {
   grid-column: 2;
   grid-row: 1 / 2;
+  padding-left: 1em;
   font-family: "Roboto Condensed";
   z-index: 1;
 }
@@ -81,6 +85,7 @@ export default {
 .ahj-count {
   grid-column: 2;
   grid-row: 1 / 2;
+  padding-left: 1em;
   font-family: "Roboto Condensed";
 }
 
