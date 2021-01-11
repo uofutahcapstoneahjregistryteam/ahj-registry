@@ -111,8 +111,8 @@ export default {
       });
       this.$store.commit("setQueryString", queryString);
       this.$store.commit("setAPILoading", true);
-      // this.$store.commit("setSelectedAHJ", null);
-      // this.$store.commit("deleteAPIData");
+      this.$store.commit("setSelectedAHJ", null);
+      this.$store.commit("deleteAPIData");
       this.$store.commit("callAPI", queryString);
     },
     clearFilters() {
@@ -131,9 +131,8 @@ export default {
         WindCode: [],
         StateProvince: ""
       };
-      // this.$store.commit("setQueryString", "");
-      // this.$store.commit("updateCurrentPage", 1);
-      this.$store.commit("deleteAPIData");
+      this.$store.commit("setQueryString", "");
+      this.$store.commit("updateCurrentPage", 1);
     },
     show(){
       document.getElementById('drop').classList.toggle('show')

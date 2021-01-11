@@ -77,9 +77,6 @@ export default new Vuex.Store({
     deleteAPIData(state) {
       state.apiData = [];
       state.ahjCount = "";
-      state.selectedAHJ = null;
-      state.showTable = false;
-      state.queryString = "";
     },
     setShowLoginModal(state, payload) {
       state.showLoginModal = payload;
@@ -147,8 +144,6 @@ export default new Vuex.Store({
       state.loginStatus = payload;
     },
     setSelectedAHJ(state, ahj) {
-      console.log('in store selectAHJ');
-      console.log(ahj);
       state.selectedAHJ = ahj;
     }
   }
