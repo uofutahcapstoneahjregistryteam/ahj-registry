@@ -122,7 +122,7 @@ export default {
     "component-pagination": Pagination
   }
 };
-</script>
+<style scoped>
 
 <style>
 .btn {
@@ -134,7 +134,6 @@ export default {
   grid-template-columns: auto;
   height: 100%;
   padding-top: 5px;
-  width: 1163px;
 }
 
 li {

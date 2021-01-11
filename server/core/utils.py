@@ -1,13 +1,37 @@
-from core.models import *
+from .models import *
 from simple_history.models import HistoricalRecords
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
-from core.serializers import *
+from .serializers import *
 from rest_framework.parsers import JSONParser
 from django.apps import apps
 import json
 import csv
+from ahj_gis.constants import GOOGLE_GEOCODING_API_KEY
+from googlemaps import Client
+
+gmaps = Client(key=GOOGLE_GEOCODING_API_KEY)
+
+
+def get_location(request):
+    """
+    Returns the latlng of an address given in the request Address parameter
+    The format is an Orange Button Location object: https://obeditor.sunspec.org/#/?views=Location
+    """
+    location = {
+            'Latitude': None,
+            'Longitude': None
+    }
+    address = request.GET.get('Address', None)
+    if address is not None:
+        geo_res = gmaps.geocode(address)
+        if len(geo_res) != 0:
+            latitude = geo_res[0]['geometry']['location']['lat']
+            longitude = geo_res[0]['geometry']['location']['lng']
+            location['Latitude'] = latitude
+            location['Longitude'] = longitude
+    return location
 
 
 def get_ahj_diff(ahj):
@@ -157,10 +181,9 @@ def export_dupe_ahjs_csv():
             i += 1
 
 
-def set_view_mode(request):
+def set_view_mode(request, hide_ui_fields):
     confirmed = False
     highest_voted = False
-    hide_ui_fields = request.GET.get('hide_ui_fields', True)
     view_mode = request.GET.get('view', '')
     if view_mode == 'confirmed':
         confirmed = True

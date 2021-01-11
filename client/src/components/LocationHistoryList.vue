@@ -124,7 +124,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .btn {
   margin: 5px;
 }
@@ -134,7 +134,6 @@ export default {
   grid-template-columns: auto;
   height: 100%;
   padding-top: 5px;
-  width: 1163px;
 }
 
 li {

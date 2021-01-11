@@ -317,6 +317,7 @@ export default {
       }
     },
     setAHJFieldsFromResponse(record) {
+      delete record["mpoly"]; // do not include the AHJ's polygon
       let result = {};
       Object.keys(record).forEach(key => {
         let field = record[key];

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from ahj_gis.serializers import PolygonSerializer
 from rest_framework.renderers import JSONRenderer
 from .models import *
 
@@ -169,6 +170,16 @@ class AHJSerializer(serializers.Serializer):
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
+    mpoly = PolygonSerializer()
+
+    def __init__(self, *args, **kwargs):
+        hide_ui_fields = kwargs['context'].get('hide_ui_fields', True)
+        super(AHJSerializer, self).__init__(*args, **kwargs)
+
+        if hide_ui_fields is True:
+            excluded_field_names = ['mpoly']
+            for field in excluded_field_names:
+                self.fields.pop(field)
 
     def update(self, instance, validated_data):
         pass
