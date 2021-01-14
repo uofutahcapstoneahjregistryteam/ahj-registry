@@ -72,7 +72,8 @@ export default {
   },
   beforeCreate() {
     this.$store.commit("setApiUrlAddon", "history/ahj/");
-    this.$store.commit("callAPI");
+    this.$store.commit("setAPILoading", true);
+    this.$store.commit("callHistoryAPI");
   },
   beforeDestroy() {
     this.$store.commit("deleteAPIData");
@@ -107,24 +108,15 @@ export default {
         case "~":
           return "Modified";
       }
-    },
-    nextPage() {
-      this.$store.commit("toggleAPILoading");
-      return this.$store.commit("callAPI", this.$store.state.nextPage);
-    },
-    previousPage() {
-      this.$store.commit("toggleAPILoading");
-
-      return this.$store.commit("callAPI", this.$store.state.previousPage);
     }
   },
   components: {
     "component-pagination": Pagination
   }
 };
-<style scoped>
+</script>
 
-<style>
+<style scoped>
 .btn {
   margin: 5px;
 }

@@ -74,6 +74,36 @@ export default new Vuex.Store({
           // request was cancelled or some other error
         });
     },
+    callHistoryAPI(state, payload) {
+      // If another axios request has been made; cancel it
+      if (state.cancelAPICallToken !== null) {
+        state.cancelAPICallToken("previous request cancelled");
+      }
+      let url = state.apiURL + state.apiURLAddon + "?";
+      if (payload) {
+        url += payload;
+      }
+      axios
+        .get(url, {
+          headers: {
+            Authorization: constants.TOKEN_AUTH
+          },
+          cancelToken: new axios.CancelToken(function executor(c) {
+            state.cancelAPICallToken = c;
+          })
+        })
+        .then(response => {
+          state.apiData = response.data;
+          state.ahjCount = response.data.count;
+          state.hasNext = Boolean(response.data.next);
+          state.hasPrevious = Boolean(response.data.previous);
+          state.cancelAPICallToken = null;
+          state.apiLoading = false;
+        })
+        .catch((/*err*/) => {
+          // request was cancelled or some other error
+        });
+    },
     deleteAPIData(state) {
       state.apiData = [];
       state.ahjCount = "";
@@ -105,7 +135,7 @@ export default new Vuex.Store({
       state.resultsDownloading = true;
       let gatherAllObjects = function(url, ahjJSONObjs, offset) {
         if (url === null) {
-          let filename = "results"
+          let filename = "results";
           let fileToExport = null;
           if (fileType === "application/json") {
             fileToExport = JSON.stringify(ahjJSONObjs, null, 2);
@@ -145,6 +175,9 @@ export default new Vuex.Store({
     },
     setSelectedAHJ(state, ahj) {
       state.selectedAHJ = ahj;
+    },
+    setShowTable(state, payload) {
+      state.showTable = payload;
     }
   }
 });

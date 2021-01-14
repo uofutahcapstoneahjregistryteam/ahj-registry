@@ -38,6 +38,7 @@ import MapView from "../components/MapView";
 import AHJList from "../components/AHJList.vue";
 export default {
   mounted() {
+    this.$store.commit("setShowTable", false);
     this.$store.commit("setApiUrlAddon", "ahj-private/");
   },
   components: {
