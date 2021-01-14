@@ -20,8 +20,12 @@ def get_location(request):
     The format is an Orange Button Location object: https://obeditor.sunspec.org/#/?views=Location
     """
     location = {
-            'Latitude': None,
-            'Longitude': None
+            'Latitude': {
+                'Value': None
+            },
+            'Longitude': {
+                'Value': None
+            }
     }
     address = request.GET.get('Address', None)
     if address is not None:
@@ -29,8 +33,8 @@ def get_location(request):
         if len(geo_res) != 0:
             latitude = geo_res[0]['geometry']['location']['lat']
             longitude = geo_res[0]['geometry']['location']['lng']
-            location['Latitude'] = latitude
-            location['Longitude'] = longitude
+            location['Latitude']['Value'] = latitude
+            location['Longitude']['Value'] = longitude
     return location
 
 

@@ -128,10 +128,10 @@ class WebpageAHJList(generics.ListAPIView):
         location = get_location(request)
 
         # filter by latlng if given
-        if location['Latitude'] is not None and location['Longitude'] is not None:
+        if location['Latitude']['Value'] is not None and location['Longitude']['Value'] is not None:
             # mpoly of an AHJ refers to a Polygon object; mpoly of a Polygon refers to a MULTIPOLYGON
             # mpoly__mpoly__intersects looks for what AHJ's Polygon's MULTIPOLYGONS contain this point
-            queryset = filter_ahjs_by_location(location['Longitude'], location['Latitude'],
+            queryset = filter_ahjs_by_location(location['Longitude']['Value'], location['Latitude']['Value'],
                                                ahjs_to_search=queryset.values_list('AHJID', flat=True))
 
         # construct the paginated response
@@ -177,10 +177,10 @@ class AHJList(generics.ListAPIView):
         location = get_location(request)
 
         # filter by latlng if given
-        if location['Latitude'] is not None and location['Longitude'] is not None:
+        if location['Latitude']['Value'] is not None and location['Longitude']['Value'] is not None:
             # mpoly of an AHJ refers to a Polygon object; mpoly of a Polygon refers to a MULTIPOLYGON
             # mpoly__mpoly__intersects looks for what AHJ's Polygon's MULTIPOLYGONS contain this point
-            queryset = filter_ahjs_by_location(location['Longitude'], location['Latitude'],
+            queryset = filter_ahjs_by_location(location['Longitude']['Value'], location['Latitude']['Value'],
                                                ahjs_to_search=queryset.values_list('AHJID', flat=True))
 
         # construct the paginated response

@@ -87,15 +87,15 @@ export default {
     },
     updateMapMarkers(ahjlist) {
       let location = this.$store.state.apiData.results.Location;
-      if (location["Latitude"] !== null) {
+      if (location["Latitude"]["Value"] !== null) {
         let searchMarker = L.AwesomeMarkers.icon({
           icon: "circle",
           prefix: "fa",
           markerColor: "cadetblue"
         });
         let searchedLocation = [
-          location["Latitude"],
-          location["Longitude"]
+          location["Latitude"]["Value"],
+          location["Longitude"]["Value"]
         ];
         this.currSearchMarker = L.marker(searchedLocation, {
           icon: searchMarker
@@ -167,7 +167,7 @@ export default {
         this.resetLeafletMapLayers();
         this.resetMapView();
       } else {
-        if (this.$store.state.apiData.results.Location["Latitude"] !== null) { // check if a location/address was searched
+        if (this.$store.state.apiData.results.Location["Latitude"]["Value"] !== null) { // check if a location/address was searched
           if (this.polygonLayer === null) {
             this.updateMap(this.$store.state.apiData.results.ahjlist);
           } else {
