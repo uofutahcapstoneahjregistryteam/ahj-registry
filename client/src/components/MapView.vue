@@ -110,15 +110,26 @@ export default {
           prefix: "fa",
           markerColor: this.selectMarkerColor(polygon)
         });
-        let polygonInternalPoint = [
-          polygon.properties.INTPTLAT,
-          polygon.properties.INTPTLON
-        ];
-        let marker = L.marker(polygonInternalPoint, {
+        let ahjOfficeLocation = null;
+        let ahjOfficeMarkerTooltipMsg = `<b>${ahj.AHJName.Value}</b><br><b>Address</b>: `;
+        if (ahj.Address && ahj.Address.Location && ahj.Address.Location["Latitude"]["Value"] && ahj.Address.Location["Longitude"]["Value"]) {
+          ahjOfficeLocation = [
+            ahj.Address.Location["Latitude"]["Value"],
+            ahj.Address.Location["Longitude"]["Value"]
+          ];
+          ahjOfficeMarkerTooltipMsg += "<br>" + this.getAHJOfficeAddress(ahj);
+        } else {
+          ahjOfficeLocation = [
+            polygon.properties.INTPTLAT,
+            polygon.properties.INTPTLON
+          ];
+          ahjOfficeMarkerTooltipMsg += "The AHJ Registry does not have an Address for this AHJ";
+        }
+        let marker = L.marker(ahjOfficeLocation, {
           icon: ahjMarker,
           riseOnHover: true
         })
-          .bindTooltip(`<b>${ahj.AHJName.Value}</b><br><b>Address</b>: The AHJ Registry does not have an Address for this AHJ`)
+          .bindTooltip(ahjOfficeMarkerTooltipMsg)
           .addTo(this.markerLayerGroup);
         let that = this;
         marker.on("click", function() {
@@ -137,6 +148,25 @@ export default {
         default:
           return "blue"; // ??
       }
+    },
+    /*
+     * Formats an Address in this style:
+     * AddrLine1
+     * AddrLine2
+     * AddrLine3
+     * City, County, StateProvince ZipPostalCode
+     */
+    getAHJOfficeAddress(ahj) {
+      let address = ahj.Address;
+      let result = "";
+      if (address.AddrLine1.Value) result += address.AddrLine1.Value + "<br>";
+      if (address.AddrLine2.Value) result += address.AddrLine2.Value + "<br>";
+      if (address.AddrLine3.Value) result += address.AddrLine3.Value + "<br>";
+      if (address.City.Value) result += address.City.Value + ", ";
+      if (address.County.Value) result += address.County.Value + ", ";
+      if (address.StateProvince.Value) result += address.StateProvince.Value + " ";
+      if (address.ZipPostalCode.Value) result += address.ZipPostalCode.Value;
+      return result;
     },
     resetLeafletMapLayers() {
       if (this.polygonLayer !== null) {
