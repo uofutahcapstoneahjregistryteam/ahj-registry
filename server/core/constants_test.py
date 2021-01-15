@@ -12,6 +12,7 @@ EDIT_CREATE_ADDRESS = lambda ParentID, ParentRecordType: {'RecordType': 'Address
 EDIT_CREATE_CONTACT = lambda ParentID: {'RecordType': 'Contact', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
 EDIT_CREATE_ENG_REV_REQ = lambda ParentID: {'RecordType': 'EngineeringReviewRequirement', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
 EDIT_CREATE_LOCATION = lambda ParentID: {'RecordType': 'Location', 'ParentID': ParentID, 'ParentRecordType': 'Address', 'EditType': 'create'}
+EDIT_CREATE_FEE_STRUCTURE = lambda ParentID: {'RecordType': 'FeeStructure', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
 
 EDIT_DELETE = lambda RecordID, RecordType: {'RecordID': RecordID, 'RecordType': RecordType, 'EditType': 'delete'}
 

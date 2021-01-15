@@ -185,7 +185,7 @@ def export_dupe_ahjs_csv():
             i += 1
 
 
-def set_view_mode(request, hide_ui_fields):
+def set_view_mode(request, hide_ui_fields, called_by_view):
     confirmed = False
     highest_voted = False
     view_mode = request.GET.get('view', '')
@@ -193,7 +193,7 @@ def set_view_mode(request, hide_ui_fields):
         confirmed = True
     elif view_mode == 'highest_voted':
         highest_voted = True
-    return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted, 'hide_ui_fields': hide_ui_fields}
+    return {'confirmed_edits_only': confirmed, 'highest_vote_rating': highest_voted, 'hide_ui_fields': hide_ui_fields, 'called_by_view': called_by_view}
 
 
 def create_edit(request):

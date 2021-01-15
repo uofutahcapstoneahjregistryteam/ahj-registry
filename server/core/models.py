@@ -26,6 +26,8 @@ def retrieve_edit(record, field_name, edit):
     if edit is None:
         if record.__class__.__name__ == 'AHJ':
             return Edit(RecordID=record.AHJID, RecordType='AHJ', Value=getattr(record, field_name), FieldName=field_name)
+        elif record.__class__.__name__ == 'FeeStructure':
+            return Edit(RecordID=record.FeeStructureID, RecordType='FeeStructure', Value=getattr(record, field_name), FieldName=field_name)
         return Edit(RecordID=record.id, RecordType=record.__class__.__name__, Value=getattr(record, field_name), FieldName=field_name)
     else:
         return edit
@@ -70,11 +72,13 @@ def add_delete_edits(record, edit):
 def get_all_record_edits(record):
     if record.__class__.__name__ == 'AHJ':
         return Edit.objects.filter(RecordID=record.AHJID)
+    elif record.__class__.__name__ == 'FeeStructure':
+        return Edit.objects.filter(RecordID=record.FeeStructureID)
     return Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__)
 
 
 def reject_all_unconfirmed_record_update_edits(record, edit):
-    record_edits = get_all_record_edits(record).filter(IsConfirmed=None).filter(EditType='update')
+    record_edits = get_all_record_edits(record).filter(IsConfirmed=None).filter(EditType='update').filter(FieldName=edit.FieldName)
     for record_edit in record_edits:
         record_edit.reject(edit.ConfirmingUserID)
 
@@ -82,6 +86,8 @@ def reject_all_unconfirmed_record_update_edits(record, edit):
 def check_record_edit_create_confirmed(record):
     if record.__class__.__name__ == 'AHJ':
         create_edit = Edit.objects.filter(RecordID=record.AHJID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
+    elif record.__class__.__name__ == 'FeeStructure':
+        create_edit = Edit.objects.filter(RecordID=record.FeeStructureID).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
     else:
         create_edit = Edit.objects.filter(RecordID=record.id).filter(RecordType=record.__class__.__name__).filter(EditType='create').first()
     if create_edit is None or create_edit.IsConfirmed:
@@ -267,6 +273,31 @@ class Location(models.Model):
         self.delete()
 
 
+class FeeStructure(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    Description = models.TextField(blank=True)
+    FeeStructureID = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    FeeStructureName = models.CharField(blank=True, max_length=100)
+    FeeStructureType = models.CharField(choices=FEE_STRUCTURE_TYPE_CHOICES, blank=True, default='', max_length=45)
+    history = HistoricalRecords()
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='FeeStructureID', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif not edit.IsConfirmed:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
 # Authentication and Authorization
 # Create an auth token every time a user is created
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -404,18 +435,25 @@ class Edit(models.Model):
             self.RecordID = record.AHJID
         else:
             record = apps.get_model('core', self.RecordType).objects.create(**{self.ParentRecordType: self.get_parent()})
-            self.RecordID = record.id
+            if self.RecordType == 'FeeStructure':
+                self.RecordID = record.FeeStructureID
+            else:
+                self.RecordID = record.id
         self.Value = self.RecordID
         self.save()
 
     def get_parent(self):
         if self.ParentRecordType == 'AHJ':
             return apps.get_model('core', self.ParentRecordType).objects.filter(AHJID=self.ParentID).first()
+        elif self.ParentRecordType == 'FeeStructure':
+            return apps.get_model('core', self.ParentRecordType).objects.filter(FeeStructureID=self.ParentID).first()
         return apps.get_model('core', self.ParentRecordType).objects.filter(id=self.ParentID).first()
 
     def get_record(self):
         if self.RecordType == 'AHJ':
             record = AHJ.objects.filter(AHJID=self.RecordID).first()
+        elif self.RecordType == 'FeeStructure':
+            record = FeeStructure.objects.filter(FeeStructureID=self.RecordID).first()
         else:
             record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID).first()
         return record
@@ -423,6 +461,8 @@ class Edit(models.Model):
     def get_record_query_set(self):
         if self.RecordType == 'AHJ':
             record = AHJ.objects.filter(AHJID=self.RecordID)
+        elif self.RecordType == 'FeeStructure':
+            record = AHJ.objects.filter(FeeStructureID=self.RecordID)
         else:
             record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID)
         return record

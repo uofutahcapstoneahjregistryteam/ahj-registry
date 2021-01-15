@@ -52,10 +52,11 @@ class EditSerializer(serializers.Serializer):
     VoteRating = serializers.IntegerField(required=False, read_only=True)
 
     def __init__(self, *args, **kwargs):
+        called_by_view = kwargs.pop('called_by_view', False)
         hide_ui_fields = kwargs.pop('hide_ui_fields', True)
         super(EditSerializer, self).__init__(*args, **kwargs)
 
-        if hide_ui_fields is True:
+        if called_by_view is True and hide_ui_fields is True:
             excluded_field_names = ['EditID', 'RecordID', 'RecordType', 'EditType', 'ParentID', 'ParentRecordType',
                                     'PreviousValue', 'FieldName', 'IsConfirmed', 'ConfirmingUserID', 'ModifyingUserID',
                                     'ModifiedDate', 'VoteRating']
@@ -146,6 +147,19 @@ class EngineeringReviewRequirementSerializer(serializers.Serializer):
         pass
 
 
+class FeeStructureSerializer(serializers.Serializer):
+    Description = EditSerializerHelper(source='*', required=False)
+    FeeStructureID = EditSerializerHelper(source='*', required=False)
+    FeeStructureName = EditSerializerHelper(source='*', required=False)
+    FeeStructureType = EditSerializerHelper(source='*', required=False)
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+
 class AHJSerializer(serializers.Serializer):
     AHJID = EditSerializerHelper(source='*', required=False)
     AHJCode = EditSerializerHelper(source='*', required=False)
@@ -170,6 +184,7 @@ class AHJSerializer(serializers.Serializer):
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
+    FeeStructures = FeeStructureSerializer(source='feestructure_set', many=True, required=False)
     mpoly = PolygonSerializer()
 
     def __init__(self, *args, **kwargs):

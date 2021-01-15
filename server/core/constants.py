@@ -114,6 +114,11 @@ STAMP_TYPE_CHOICES = [
     ('None', 'None')
 ]
 
+FEE_STRUCTURE_TYPE_CHOICES = [
+    ('Flat', 'Flat'),
+    ('SystemSize', 'SystemSize')
+]
+
 FIELD_VALIDATION = {
     'Location': {
         'Longitude': lambda value: -180 <= float(value) <= 180,
