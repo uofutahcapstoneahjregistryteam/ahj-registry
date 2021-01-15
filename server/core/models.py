@@ -78,7 +78,7 @@ def get_all_record_edits(record):
 
 
 def reject_all_unconfirmed_record_update_edits(record, edit):
-    record_edits = get_all_record_edits(record).filter(IsConfirmed=None).filter(EditType='update').filter(FieldName=edit.FieldName)
+    record_edits = get_all_record_edits(record).filter(IsConfirmed=None).filter(EditType='update')
     for record_edit in record_edits:
         record_edit.reject(edit.ConfirmingUserID)
 
@@ -105,6 +105,7 @@ class AHJ(models.Model):
     BuildingCodeNotes = models.CharField(blank=True, max_length=255)
     DataSourceComments = models.TextField(blank=True)
     Description = models.TextField(blank=True)
+    # MAKE SURE TO MOVE THE DATA BEFORE REMOVING
     DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
     DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
     ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
@@ -145,8 +146,34 @@ class AHJ(models.Model):
         self.delete()
 
 
+class AHJInspection(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    AHJInspectionName = models.CharField(blank=True, max_length=100)
+    AHJInspectionNotes = models.CharField(blank=True, max_length=255)
+    Description = models.TextField(blank=True)
+    FileFolderURL = models.CharField(blank=True, max_length=255)
+    InspectionType = models.CharField(choices=INSPECTION_TYPE_CHOICES, blank=True, default='', max_length=45)
+    TechnicianRequired = models.BooleanField(null=True)
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        contacts = Contact.objects.filter(AHJInspection=self)
+        for contact in contacts:
+            contact.chain_delete(edit)
+        self.delete()
+
+
 class Contact(models.Model):
     AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    AHJInspection = models.ForeignKey(AHJInspection, to_field='id', null=True, on_delete=models.CASCADE)
     ContactTimezone = models.CharField(blank=True, max_length=100)
     ContactType = models.CharField(choices=CONTACT_TYPE_CHOICES, blank=True, default='', max_length=45)
     Description = models.TextField(blank=True)
@@ -163,6 +190,8 @@ class Contact(models.Model):
     history = HistoricalRecords()
 
     def get_ahj(self):
+        if self.AHJ is None:
+            return self.AHJInspection.get_ahj()
         return self.AHJ
 
     def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):

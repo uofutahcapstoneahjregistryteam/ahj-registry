@@ -132,6 +132,22 @@ class ContactSerializer(serializers.Serializer):
         pass
 
 
+class AHJInspectionSerializer(serializers.Serializer):
+    AHJInspectionName = EditSerializerHelper(source='*', required=False)
+    AHJInspectionNotes = EditSerializerHelper(source='*', required=False)
+    Description = EditSerializerHelper(source='*', required=False)
+    FileFolderURL = EditSerializerHelper(source='*', required=False)
+    InspectionType = EditSerializerHelper(source='*', required=False)
+    TechnicianRequired = EditSerializerHelper(source='*', required=False)
+    Contacts = ContactSerializer(source='contact_set', many=True, required=False)
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+
 class EngineeringReviewRequirementSerializer(serializers.Serializer):
     EngineeringReviewRequirementID = EditSerializerHelper(source='*', required=False)
     RequirementLevel = EditSerializerHelper(source='*', required=False)
@@ -182,6 +198,7 @@ class AHJSerializer(serializers.Serializer):
     WindCode = EditSerializerHelper(source='*', required=False)
     WindCodeNotes = EditSerializerHelper(source='*', required=False)
     Address = AddressSerializer(source='address', many=False, required=False, allow_null=True)
+    AHJInspections = AHJInspectionSerializer(source='ahjinspection_set', many=True, required=False)
     Contacts = ContactSerializer(source='contact_set', many=True, required=False)
     EngineeringReviewRequirements = EngineeringReviewRequirementSerializer(source='engineeringreviewrequirement_set', many=True, required=False)
     FeeStructures = FeeStructureSerializer(source='feestructure_set', many=True, required=False)

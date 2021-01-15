@@ -34,7 +34,7 @@ class EditTestCase(APITestCase):
         if record_type == 'AHJ':
             edit_create = EDIT_CREATE_AHJ
         elif record_type == 'Contact':
-            edit_create = EDIT_CREATE_CONTACT(kwargs.get('parent_id', None))
+            edit_create = EDIT_CREATE_CONTACT(kwargs.get('parent_id', None), kwargs.get('parent_type', None))
         elif record_type == 'Address':
             edit_create = EDIT_CREATE_ADDRESS(kwargs.get('parent_id', None), kwargs.get('parent_type', None))
         elif record_type == 'Location':
@@ -43,6 +43,8 @@ class EditTestCase(APITestCase):
             edit_create = EDIT_CREATE_ENG_REV_REQ(kwargs.get('parent_id', None))
         elif record_type == 'FeeStructure':
             edit_create = EDIT_CREATE_FEE_STRUCTURE(kwargs.get('parent_id', None))
+        elif record_type == 'AHJInspection':
+            edit_create = EDIT_CREATE_AHJ_INSPECTION(kwargs.get('parent_id', None))
         else:
             raise ValueError('TESTING_INVALID_RECORD_TYPE')
 
@@ -54,7 +56,7 @@ class EditTestCase(APITestCase):
         if record_type == 'AHJ':
             edit_create = EDIT_CREATE_AHJ
         elif record_type == 'Contact':
-            edit_create = EDIT_CREATE_CONTACT(kwargs.get('parent_id', None))
+            edit_create = EDIT_CREATE_CONTACT(kwargs.get('parent_id', None), kwargs.get('parent_type', None))
         elif record_type == 'Address':
             edit_create = EDIT_CREATE_ADDRESS(kwargs.get('parent_id', None), kwargs.get('parent_type', None))
         elif record_type == 'Location':
@@ -63,6 +65,8 @@ class EditTestCase(APITestCase):
             edit_create = EDIT_CREATE_ENG_REV_REQ(kwargs.get('parent_id', None))
         elif record_type == 'FeeStructure':
             edit_create = EDIT_CREATE_FEE_STRUCTURE(kwargs.get('parent_id', None))
+        elif record_type == 'AHJInspection':
+            edit_create = EDIT_CREATE_AHJ_INSPECTION(kwargs.get('parent_id', None))
         else:
             raise ValueError('TESTING_INVALID_RECORD_TYPE')
 
@@ -134,7 +138,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
 
         self.assertTrue(contact_response.status_code == status.HTTP_201_CREATED)
 
@@ -167,6 +171,18 @@ class EditTestCase(APITestCase):
         self.assertTrue(FeeStructure.objects.filter(FeeStructureID=FeeStructureID).exists())
         self.assertTrue(FeeStructure.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
 
+    def test_edit_create_AHJInspection(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+
+        self.assertTrue(ahj_inspection_response.status_code == status.HTTP_201_CREATED)
+
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+
+        self.assertTrue(AHJInspection.objects.filter(id=ahj_inspection_id).exists())
+        self.assertTrue(AHJInspection.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
     def test_edit_create_Address_Location(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
@@ -184,7 +200,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_Contact_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_super('Address', parent_id=contact_id, parent_type='Contact')
 
@@ -255,7 +271,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_confirm_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         edit_id = contact_response.json()['EditID']
 
         self.become_super()
@@ -266,7 +282,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_reject_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         edit_id = contact_response.json()['EditID']
 
@@ -279,7 +295,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_unconfirmed_parent_block_confirm_Contact(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         edit_id = contact_response.json()['EditID']
 
         self.become_super()
@@ -357,10 +373,86 @@ class EditTestCase(APITestCase):
 
         self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
 
+    def test_edit_create_confirm_AHJInspection(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        edit_id = ahj_inspection_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_reject_AHJInspection(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        edit_id = ahj_inspection_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(AHJInspection.objects.filter(id=ahj_inspection_id).exists())
+
+    def test_edit_create_unconfirmed_parent_block_confirm_AHJInspection(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        edit_id = ahj_inspection_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_confirm_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        edit_id = contact_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_reject_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        contact_id = contact_response.json()['RecordID']
+        edit_id = contact_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Contact.objects.filter(id=contact_id).exists())
+
+    def test_edit_create_unconfirmed_parent_block_confirm_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        edit_id = contact_response.json()['EditID']
+
+        self.become_super()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
     def test_edit_create_confirm_Contact_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         edit_id = address_response.json()['EditID']
@@ -373,7 +465,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_reject_Contact_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         address_id = address_response.json()['RecordID']
@@ -388,7 +480,7 @@ class EditTestCase(APITestCase):
     def test_edit_create_unconfirmed_parent_block_confirm_Contact_Address(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         edit_id = address_response.json()['EditID']
@@ -446,7 +538,7 @@ class EditTestCase(APITestCase):
         ahj_address_id = ahj_address_response.json()['RecordID']
         ahj_address_location_response = self.create_record_as_super('Location', parent_id=ahj_address_id)
         ahj_address_location_id = ahj_address_location_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         contact_address_response = self.create_record_as_super('Address', parent_id=contact_id, parent_type='Contact')
         contact_address_id = contact_address_response.json()['RecordID']
@@ -456,6 +548,10 @@ class EditTestCase(APITestCase):
         eng_rev_req_id = eng_rev_req_response.json()['RecordID']
         fee_structure_response = self.create_record_as_super('FeeStructure', parent_id=AHJID)
         FeeStructureID = fee_structure_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        ahj_inspection_contact_response = self.create_record_as_super('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        ahj_inspection_contact_id = ahj_inspection_contact_response.json()['RecordID']
 
         self.assertTrue(AHJ.objects.filter(AHJID=AHJID).exists())
 
@@ -480,6 +576,12 @@ class EditTestCase(APITestCase):
         self.assertTrue(Edit.objects.filter(RecordType='FeeStructure').filter(RecordID=FeeStructureID).exists())
         self.assertTrue(FeeStructure.objects.filter(FeeStructureID=FeeStructureID).exists())
 
+        self.assertTrue(Edit.objects.filter(RecordType='AHJInspection').filter(RecordID=ahj_inspection_id).exists())
+        self.assertTrue(AHJInspection.objects.filter(id=ahj_inspection_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Contact').filter(RecordID=ahj_inspection_contact_id).exists())
+        self.assertTrue(Contact.objects.filter(id=ahj_inspection_contact_id).exists())
+
     def test_edit_create_reject_AHJ_whole(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
@@ -488,7 +590,7 @@ class EditTestCase(APITestCase):
         ahj_address_id = ahj_address_response.json()['RecordID']
         ahj_address_location_response = self.create_record_as_user('Location', parent_id=ahj_address_id)
         ahj_address_location_id = ahj_address_location_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         contact_address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         contact_address_id = contact_address_response.json()['RecordID']
@@ -498,6 +600,10 @@ class EditTestCase(APITestCase):
         eng_rev_req_id = eng_rev_req_response.json()['RecordID']
         fee_structure_response = self.create_record_as_super('FeeStructure', parent_id=AHJID)
         FeeStructureID = fee_structure_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        ahj_inspection_contact_response = self.create_record_as_super('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        ahj_inspection_contact_id = ahj_inspection_contact_response.json()['RecordID']
 
         self.become_super()
         self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
@@ -525,6 +631,12 @@ class EditTestCase(APITestCase):
 
         self.assertFalse(Edit.objects.filter(RecordType='FeeStructure').get(RecordID=FeeStructureID).IsConfirmed)
         self.assertFalse(FeeStructure.objects.filter(FeeStructureID=FeeStructureID).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='AHJInspection').get(RecordID=ahj_inspection_id).IsConfirmed)
+        self.assertFalse(EngineeringReviewRequirement.objects.filter(id=ahj_inspection_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Contact').get(RecordID=ahj_inspection_contact_id).IsConfirmed)
+        self.assertFalse(Contact.objects.filter(id=ahj_inspection_contact_id).exists())
 
     def test_edit_create_owner_confirm_Address(self):
         ahj_response = self.create_record_as_super('AHJ')
@@ -568,7 +680,7 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         edit_id = contact_response.json()['EditID']
 
         self.become_owner()
@@ -580,7 +692,7 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         edit_id = contact_response.json()['EditID']
 
@@ -594,7 +706,51 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertIsNone(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_confirm_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'accepted'))
+
+        self.assertTrue(Edit.objects.get(pk=edit_id).IsConfirmed)
+
+    def test_edit_create_owner_reject_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        contact_id = contact_response.json()['RecordID']
+        edit_id = contact_response.json()['EditID']
+
+        self.become_owner()
+        self.client.get(EDIT_DETAIL_ENDPOINT_CONFIRM(edit_id, 'rejected'))
+
+        self.assertFalse(Edit.objects.get(pk=edit_id).IsConfirmed)
+        self.assertFalse(Contact.objects.filter(id=contact_id).exists())
+
+    def test_edit_create_owner_unconfirmed_parent_block_confirm_AHJInspection_Contact(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
         edit_id = contact_response.json()['EditID']
 
         self.become_owner()
@@ -682,7 +838,7 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         edit_id = address_response.json()['EditID']
@@ -696,7 +852,7 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         address_id = address_response.json()['RecordID']
@@ -712,7 +868,7 @@ class EditTestCase(APITestCase):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
         self.client.get(AHJ_OWNER_ENDPOINT('add', self.owner.id, AHJID))
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         edit_id = address_response.json()['EditID']
@@ -839,7 +995,7 @@ class EditTestCase(APITestCase):
     def test_edit_delete_Contact_from_AHJ(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
 
         delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
@@ -850,7 +1006,7 @@ class EditTestCase(APITestCase):
     def test_edit_delete_unconfirmed_record_block_delete_Contact_from_AHJ(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
 
         self.become_super()
@@ -882,6 +1038,56 @@ class EditTestCase(APITestCase):
         self.assertTrue(delete_response.status_code == status.HTTP_403_FORBIDDEN)
         self.assertTrue(EngineeringReviewRequirement.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
 
+    def test_edit_delete_AHJInspection_from_AHJ(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_create_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_create_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(ahj_inspection_id, 'AHJInspection'))
+
+        self.assertTrue(delete_response.status_code == status.HTTP_201_CREATED)
+        self.assertFalse(AHJInspection.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_AHJInspection_from_AHJ(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_create_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_create_response.json()['RecordID']
+
+        self.become_super()
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(ahj_inspection_id, 'AHJInspection'))
+
+        self.assertTrue(delete_response.status_code == status.HTTP_403_FORBIDDEN)
+        self.assertTrue(AHJInspection.objects.filter(AHJ=AHJ.objects.get(AHJID=AHJID)).exists())
+
+    def test_edit_delete_Contact_from_AHJInspection(self):
+        ahj_response = self.create_record_as_super('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_create_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_create_response.json()['RecordID']
+        contact_response = self.create_record_as_super('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        contact_id = contact_response.json()['RecordID']
+
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
+
+        self.assertTrue(delete_response.status_code == status.HTTP_201_CREATED)
+        self.assertFalse(Contact.objects.filter(AHJInspection=AHJInspection.objects.get(id=ahj_inspection_id)).exists())
+
+    def test_edit_delete_unconfirmed_record_block_delete_Contact_from_AHJInspection(self):
+        ahj_response = self.create_record_as_user('AHJ')
+        AHJID = ahj_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_user('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        contact_response = self.create_record_as_user('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        contact_id = contact_response.json()['RecordID']
+
+        self.become_super()
+        delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(contact_id, 'Contact'))
+
+        self.assertTrue(delete_response.status_code == status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Contact.objects.filter(AHJInspection=AHJInspection.objects.get(id=ahj_inspection_id)).exists())
+
     def test_edit_delete_FeeStructure_from_AHJ(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
@@ -908,7 +1114,7 @@ class EditTestCase(APITestCase):
     def test_edit_delete_Address_from_Contact(self):
         ahj_response = self.create_record_as_super('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_create_response = self.create_record_as_super('Address', parent_id=contact_id, parent_type='Contact')
         address_id = address_create_response.json()['RecordID']
@@ -921,7 +1127,7 @@ class EditTestCase(APITestCase):
     def test_edit_delete_unconfirmed_record_block_delete_Address_from_Contact(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         address_create_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         address_id = address_create_response.json()['RecordID']
@@ -966,7 +1172,7 @@ class EditTestCase(APITestCase):
         ahj_address_id = ahj_address_response.json()['RecordID']
         ahj_address_location_response = self.create_record_as_super('Location', parent_id=ahj_address_id)
         ahj_address_location_id = ahj_address_location_response.json()['RecordID']
-        contact_response = self.create_record_as_super('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_super('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         contact_address_response = self.create_record_as_super('Address', parent_id=contact_id, parent_type='Contact')
         contact_address_id = contact_address_response.json()['RecordID']
@@ -976,6 +1182,10 @@ class EditTestCase(APITestCase):
         eng_rev_req_id = eng_rev_req_response.json()['RecordID']
         fee_structure_response = self.create_record_as_super('FeeStructure', parent_id=AHJID)
         FeeStructureID = fee_structure_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        ahj_inspection_contact_response = self.create_record_as_super('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        ahj_inspection_contact_id = ahj_inspection_contact_response.json()['RecordID']
 
         delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
 
@@ -1004,6 +1214,12 @@ class EditTestCase(APITestCase):
         self.assertTrue(Edit.objects.filter(RecordType='FeeStructure').filter(RecordID=FeeStructureID).exists())
         self.assertFalse(FeeStructure.objects.filter(FeeStructureID=FeeStructureID).exists())
 
+        self.assertTrue(Edit.objects.filter(RecordType='AHJInspection').filter(RecordID=ahj_inspection_id).exists())
+        self.assertFalse(AHJInspection.objects.filter(id=ahj_inspection_id).exists())
+
+        self.assertTrue(Edit.objects.filter(RecordType='Contact').filter(RecordID=ahj_inspection_contact_id).exists())
+        self.assertFalse(Contact.objects.filter(id=ahj_inspection_contact_id).exists())
+
     def test_edit_delete_unconfirmed_record_block_delete_AHJ_whole(self):
         ahj_response = self.create_record_as_user('AHJ')
         AHJID = ahj_response.json()['RecordID']
@@ -1011,7 +1227,7 @@ class EditTestCase(APITestCase):
         ahj_address_id = ahj_address_response.json()['RecordID']
         ahj_address_location_response = self.create_record_as_user('Location', parent_id=ahj_address_id)
         ahj_address_location_id = ahj_address_location_response.json()['RecordID']
-        contact_response = self.create_record_as_user('Contact', parent_id=AHJID)
+        contact_response = self.create_record_as_user('Contact', parent_id=AHJID, parent_type='AHJ')
         contact_id = contact_response.json()['RecordID']
         contact_address_response = self.create_record_as_user('Address', parent_id=contact_id, parent_type='Contact')
         contact_address_id = contact_address_response.json()['RecordID']
@@ -1021,6 +1237,10 @@ class EditTestCase(APITestCase):
         eng_rev_req_id = eng_rev_req_response.json()['RecordID']
         fee_structure_response = self.create_record_as_user('FeeStructure', parent_id=AHJID)
         FeeStructureID = fee_structure_response.json()['RecordID']
+        ahj_inspection_response = self.create_record_as_super('AHJInspection', parent_id=AHJID)
+        ahj_inspection_id = ahj_inspection_response.json()['RecordID']
+        ahj_inspection_contact_response = self.create_record_as_super('Contact', parent_id=ahj_inspection_id, parent_type='AHJInspection')
+        ahj_inspection_contact_id = ahj_inspection_contact_response.json()['RecordID']
 
         self.become_super()
         delete_response = self.client.post(EDIT_SUBMIT_ENDPOINT, EDIT_DELETE(AHJID, 'AHJ'))
@@ -1057,6 +1277,12 @@ class EditTestCase(APITestCase):
 
         self.assertFalse(Edit.objects.filter(RecordType='FeeStructure').filter(RecordID=FeeStructureID).filter(EditType='delete').exists())
         self.assertTrue(FeeStructure.objects.filter(FeeStructureID=FeeStructureID).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='EngineeringReviewRequirement').filter(RecordID=ahj_inspection_id).filter(EditType='delete').exists())
+        self.assertTrue(AHJInspection.objects.filter(id=ahj_inspection_id).exists())
+
+        self.assertFalse(Edit.objects.filter(RecordType='Contact').filter(RecordID=ahj_inspection_contact_id).filter(EditType='delete').exists())
+        self.assertTrue(Contact.objects.filter(id=ahj_inspection_contact_id).exists())
 
     """
     Test updating records with Edit

@@ -116,7 +116,15 @@ STAMP_TYPE_CHOICES = [
 
 FEE_STRUCTURE_TYPE_CHOICES = [
     ('Flat', 'Flat'),
-    ('SystemSize', 'SystemSize')
+    ('SystemSize', 'System Size')
+]
+
+INSPECTION_TYPE_CHOICES = [
+    ('RoughIn', 'Rough In'),
+    ('Final', 'Final'),
+    ('Windstorm', 'Windstorm'),
+    ('Electrical', 'Electrical'),
+    ('Structural', 'Structural')
 ]
 
 FIELD_VALIDATION = {
