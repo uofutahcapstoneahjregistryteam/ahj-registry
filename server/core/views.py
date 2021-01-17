@@ -149,7 +149,7 @@ class WebpageAHJList(generics.ListAPIView):
         return Response(serializer.data)
 
     def get_serializer_context(self):
-        return set_view_mode(self.request, False)
+        return set_view_mode(self.request, hide_ui_fields=False, called_by_view=True)
 
 
 class AHJList(generics.ListAPIView):
@@ -195,7 +195,7 @@ class AHJList(generics.ListAPIView):
         return Response(serializer.data)
 
     def get_serializer_context(self):
-        return set_view_mode(self.request, True)
+        return set_view_mode(self.request, hide_ui_fields=True, called_by_view=True)
 
 
 class AHJDetail(generics.RetrieveAPIView):
@@ -205,7 +205,7 @@ class AHJDetail(generics.RetrieveAPIView):
     permission_classes = (permissions.IsAuthenticated, IsSuperUserOrReadOnly)
 
     def get_serializer_context(self):
-        return set_view_mode(self.request, False)
+        return set_view_mode(self.request, hide_ui_fields=False, called_by_view=True)
 
 
 class EditList(generics.ListAPIView):
