@@ -106,7 +106,7 @@ def owner_to_ahj(request):
 class WebpageAHJList(generics.ListAPIView):
     queryset = AHJ.objects.all()
     serializer_class = AHJSerializer
-    permission_classes = (permissions.IsAuthenticated,)    # permissions.IsAdminUser)  # IsSuperuser)
+    permission_classes = (permissions.IsAuthenticated, permissions.IsAdminUser)
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = AHJFilter
     search_fields = ['AHJName', 'address__City', 'address__County', 'address__Country', 'address__StateProvince', 'address__ZipPostalCode']
