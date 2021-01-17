@@ -63,7 +63,11 @@ def get_edit(record, field_name, find_create_edit, confirmed_edits_only, highest
 
 def add_delete_edits(record, edit):
     # The record will never be an AHJ record
-    Edit.objects.create(RecordID=record.id, RecordType=record.__class__.__name__, EditType='delete',
+    if record.__class__.__name__ == 'FeeStructure':
+        record_id = record.FeeStructureID
+    else:
+        record_id = record.id
+    Edit.objects.create(RecordID=record_id, RecordType=record.__class__.__name__, EditType='delete',
                         ModifyingUserID=edit.ModifyingUserID,
                         ModifiedDate=edit.ModifiedDate, IsConfirmed=True, ConfirmingUserID=edit.ConfirmingUserID,
                         ConfirmedDate=edit.ConfirmedDate)
@@ -105,14 +109,13 @@ class AHJ(models.Model):
     BuildingCodeNotes = models.CharField(blank=True, max_length=255)
     DataSourceComments = models.TextField(blank=True)
     Description = models.TextField(blank=True)
-    # MAKE SURE TO MOVE THE DATA BEFORE REMOVING
-    DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
     DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
     ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
     ElectricCodeNotes = models.CharField(blank=True, max_length=255)
     FileFolderURL = models.CharField(blank=True, max_length=255)
     FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
     FireCodeNotes = models.CharField(blank=True, max_length=255)
+    PermitIssueMethodNotes = models.CharField(blank=True, max_length=255)
     ResidentialCode = models.CharField(choices=RESIDENTIAL_CODE_CHOICES, blank=True, default='', max_length=45)
     ResidentialCodeNotes = models.CharField(blank=True, max_length=255)
     URL = models.CharField(blank=True, max_length=255)
@@ -141,7 +144,61 @@ class AHJ(models.Model):
         eng_rev_reqs = EngineeringReviewRequirement.objects.filter(AHJ=self)
         for eng_rev_req in eng_rev_reqs:
             eng_rev_req.chain_delete(edit)
-        if not edit.IsConfirmed:
+        ahj_inspections = AHJInspection.objects.filter(AHJ=self)
+        for ahj_inspection in ahj_inspections:
+            ahj_inspection.chain_delete(edit)
+        fee_structures = FeeStructure.objects.filter(AHJ=self)
+        for fee_structure in fee_structures:
+            fee_structure.chain_delete(edit)
+        doc_sub_methods = DocumentSubmissionMethod.objects.filter(AHJ=self)
+        for doc_sub_method in doc_sub_methods:
+            doc_sub_method.chain_delete(edit)
+        permit_issue_methods = PermitIssueMethod.objects.filter(AHJ=self)
+        for permit_issue_method in permit_issue_methods:
+            permit_issue_method.chain_delete(edit)
+        if edit.IsConfirmed is False:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class DocumentSubmissionMethod(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    DocumentSubmissionMethod = models.CharField(choices=DOCUMENT_SUBMISSION_METHOD_CHOICES, blank=True, default='', max_length=45)
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif edit.IsConfirmed is False:
+            reject_all_unconfirmed_record_update_edits(self, edit)
+        self.delete()
+
+
+class PermitIssueMethod(models.Model):
+    AHJ = models.ForeignKey(AHJ, to_field='AHJID', null=True, on_delete=models.CASCADE)
+    PermitIssueMethod = models.CharField(choices=PERMIT_ISSUE_METHOD_CHOICES, blank=True, default='', max_length=45)
+
+    def get_ahj(self):
+        return self.AHJ
+
+    def get_edit(self, field_name, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name=field_name, find_create_edit=False, confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def get_create_edit(self, confirmed_edits_only, highest_vote_rating):
+        return get_edit(record=self, field_name='id', find_create_edit=True,  confirmed_edits_only=confirmed_edits_only, highest_vote_rating=highest_vote_rating)
+
+    def chain_delete(self, edit):
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -168,6 +225,10 @@ class AHJInspection(models.Model):
         contacts = Contact.objects.filter(AHJInspection=self)
         for contact in contacts:
             contact.chain_delete(edit)
+        if edit.IsConfirmed:
+            add_delete_edits(self, edit)
+        elif edit.IsConfirmed is False:
+            reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
 
@@ -206,7 +267,7 @@ class Contact(models.Model):
             address.chain_delete(edit)
         if edit.IsConfirmed:
             add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -232,7 +293,7 @@ class EngineeringReviewRequirement(models.Model):
     def chain_delete(self, edit):
         if edit.IsConfirmed:
             add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -269,7 +330,7 @@ class Address(models.Model):
             location.chain_delete(edit)
         if edit.IsConfirmed:
             add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -297,7 +358,7 @@ class Location(models.Model):
     def chain_delete(self, edit):
         if edit.IsConfirmed:
             add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -322,7 +383,7 @@ class FeeStructure(models.Model):
     def chain_delete(self, edit):
         if edit.IsConfirmed:
             add_delete_edits(self, edit)
-        elif not edit.IsConfirmed:
+        elif edit.IsConfirmed is False:
             reject_all_unconfirmed_record_update_edits(self, edit)
         self.delete()
 
@@ -517,7 +578,12 @@ class Edit(models.Model):
                 field_update = {self.FieldName: self.Value}
                 record_query_set.update(**field_update)
         elif self.EditType == 'delete':
+            self.IsConfirmed = True
+            self.ConfirmingUserID = user_id
+            self.ConfirmedDate = timezone.now()
             self.get_record().chain_delete(self)
+            self.save()
+            return
         self.IsConfirmed = True
         self.ConfirmingUserID = user_id
         self.ConfirmedDate = timezone.now()

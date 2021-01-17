@@ -47,6 +47,13 @@ DOCUMENT_SUBMISSION_METHOD_CHOICES = [
     ('SolarApp', 'SolarAPP')
 ]
 
+PERMIT_ISSUE_METHOD_CHOICES = [
+    ('Epermitting', 'Epermitting'),
+    ('Email', 'Email'),
+    ('InPerson', 'In Person'),
+    ('SolarApp', 'SolarAPP')
+]
+
 ADDRESS_TYPE_CHOICES = [
     ('Mailing', 'Mailing'),
     ('Billing', 'Billing'),

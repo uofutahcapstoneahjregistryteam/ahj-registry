@@ -4,13 +4,23 @@ from rest_framework.renderers import JSONRenderer
 from .models import *
 
 
-class EditSerializerHelper(serializers.Field):
+class EditSerializerHelper(serializers.BaseSerializer):
     def to_representation(self, value):
         if value.__class__.__name__ == self.field_name[0:-2] and self.field_name[-2:].lower() == 'id':
             return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
-        return EditSerializer(value.get_edit(self.field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
+        if value.__class__.__name__ in ['DocumentSubmissionMethod', 'PermitIssueMethod']:
+            field_name = value.__class__.__name__
+        else:
+            field_name = self.field_name
+        return EditSerializer(value.get_edit(field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
 
     def to_internal_value(self, data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
         pass
 
 
@@ -185,13 +195,15 @@ class AHJSerializer(serializers.Serializer):
     BuildingCodeNotes = EditSerializerHelper(source='*', required=False)
     DataSourceComments = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
-    DocumentSubmissionMethod = EditSerializerHelper(source='*', required=False)
+    DocumentSubmissionMethods = EditSerializerHelper(source='documentsubmissionmethod_set', many=True, required=False)
     DocumentSubmissionMethodNotes = EditSerializerHelper(source='*', required=False)
     ElectricCode = EditSerializerHelper(source='*', required=False)
     ElectricCodeNotes = EditSerializerHelper(source='*', required=False)
     FileFolderURL = EditSerializerHelper(source='*', required=False)
     FireCode = EditSerializerHelper(source='*', required=False)
     FireCodeNotes = EditSerializerHelper(source='*', required=False)
+    PermitIssueMethods = EditSerializerHelper(source='permitissuemethod_set', many=True, required=False)
+    PermitIssueMethodNotes = EditSerializerHelper(source='*', required=False)
     ResidentialCode = EditSerializerHelper(source='*', required=False)
     ResidentialCodeNotes = EditSerializerHelper(source='*', required=False)
     URL = EditSerializerHelper(source='*', required=False)

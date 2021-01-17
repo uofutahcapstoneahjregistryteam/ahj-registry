@@ -14,6 +14,8 @@ EDIT_CREATE_ENG_REV_REQ = lambda ParentID: {'RecordType': 'EngineeringReviewRequ
 EDIT_CREATE_LOCATION = lambda ParentID: {'RecordType': 'Location', 'ParentID': ParentID, 'ParentRecordType': 'Address', 'EditType': 'create'}
 EDIT_CREATE_AHJ_INSPECTION = lambda ParentID: {'RecordType': 'AHJInspection', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
 EDIT_CREATE_FEE_STRUCTURE = lambda ParentID: {'RecordType': 'FeeStructure', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
+EDIT_CREATE_DOCUMENT_SUBMISSION_METHOD = lambda ParentID: {'RecordType': 'DocumentSubmissionMethod', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
+EDIT_CREATE_PERMIT_ISSUE_METHOD = lambda ParentID: {'RecordType': 'PermitIssueMethod', 'ParentID': ParentID, 'ParentRecordType': 'AHJ', 'EditType': 'create'}
 
 EDIT_DELETE = lambda RecordID, RecordType: {'RecordID': RecordID, 'RecordType': RecordType, 'EditType': 'delete'}
 
