@@ -7,12 +7,12 @@ from .models import *
 class EditSerializerHelper(serializers.BaseSerializer):
     def to_representation(self, value):
         if value.__class__.__name__ == self.field_name[0:-2] and self.field_name[-2:].lower() == 'id':
-            return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
+            return EditSerializer(value.get_create_edit(self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields'], called_by_view=self.parent.context['called_by_view']).data
         if value.__class__.__name__ in ['DocumentSubmissionMethod', 'PermitIssueMethod']:
             field_name = value.__class__.__name__
         else:
             field_name = self.field_name
-        return EditSerializer(value.get_edit(field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields']).data
+        return EditSerializer(value.get_edit(field_name, self.parent.context['confirmed_edits_only'], self.parent.context['highest_vote_rating']), hide_ui_fields=self.parent.context['hide_ui_fields'], called_by_view=self.parent.context['called_by_view']).data
 
     def to_internal_value(self, data):
         pass
@@ -65,7 +65,6 @@ class EditSerializer(serializers.Serializer):
         called_by_view = kwargs.pop('called_by_view', False)
         hide_ui_fields = kwargs.pop('hide_ui_fields', True)
         super(EditSerializer, self).__init__(*args, **kwargs)
-
         if called_by_view is True and hide_ui_fields is True:
             excluded_field_names = ['EditID', 'RecordID', 'RecordType', 'EditType', 'ParentID', 'ParentRecordType',
                                     'PreviousValue', 'FieldName', 'IsConfirmed', 'ConfirmingUserID', 'ModifyingUserID',
