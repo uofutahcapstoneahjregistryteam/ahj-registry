@@ -112,6 +112,7 @@ class AHJ(models.Model):
     DocumentSubmissionMethodNotes = models.CharField(blank=True, max_length=255)
     ElectricCode = models.CharField(choices=ELECTRIC_CODE_CHOICES, blank=True, default='', max_length=45)
     ElectricCodeNotes = models.CharField(blank=True, max_length=255)
+    EstimatedTurnaroundDays = models.IntegerField(null=True)
     FileFolderURL = models.CharField(blank=True, max_length=255)
     FireCode = models.CharField(choices=FIRE_CODE_CHOICES, blank=True, default='', max_length=45)
     FireCodeNotes = models.CharField(blank=True, max_length=255)
@@ -277,7 +278,7 @@ class EngineeringReviewRequirement(models.Model):
     Description = models.TextField(blank=True)
     EngineeringReviewType = models.CharField(choices=ENGINEERING_REVIEW_TYPE_CHOICES, blank=True, default='', max_length=45)
     RequirementLevel = models.CharField(choices=REQUIREMENT_LEVEL_CHOICES, blank=True, default='', max_length=45)
-    RequirementLevelNotes = models.CharField(blank=True, max_length=255)
+    RequirementNotes = models.CharField(blank=True, max_length=255)
     StampType = models.CharField(choices=STAMP_TYPE_CHOICES, max_length=45)
     history = HistoricalRecords()
 

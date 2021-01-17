@@ -160,7 +160,7 @@ class AHJInspectionSerializer(serializers.Serializer):
 class EngineeringReviewRequirementSerializer(serializers.Serializer):
     EngineeringReviewRequirementID = EditSerializerHelper(source='*', required=False)
     RequirementLevel = EditSerializerHelper(source='*', required=False)
-    RequirementLevelNotes = EditSerializerHelper(source='*', required=False)
+    RequirementNotes = EditSerializerHelper(source='*', required=False)
     StampType = EditSerializerHelper(source='*', required=False)
     Description = EditSerializerHelper(source='*', required=False)
     EngineeringReviewType = EditSerializerHelper(source='*', required=False)
@@ -198,6 +198,7 @@ class AHJSerializer(serializers.Serializer):
     DocumentSubmissionMethodNotes = EditSerializerHelper(source='*', required=False)
     ElectricCode = EditSerializerHelper(source='*', required=False)
     ElectricCodeNotes = EditSerializerHelper(source='*', required=False)
+    EstimatedTurnaroundDays = EditSerializerHelper(source='*', required=False)
     FileFolderURL = EditSerializerHelper(source='*', required=False)
     FireCode = EditSerializerHelper(source='*', required=False)
     FireCodeNotes = EditSerializerHelper(source='*', required=False)
