@@ -2,7 +2,7 @@ import L from "leaflet";
 const API_ENDPOINT = "http://127.0.0.1:8000/api/v1/";
 
 //Enter your token authorization for your account to access api
-const TOKEN_AUTH = "";
+const TOKEN_AUTH = "Token ";
 
 export default {
   API_ENDPOINT: API_ENDPOINT,
@@ -14,22 +14,27 @@ export default {
     BuildingCodeNotes: "",
     ElectricCode: "",
     ElectricCodeNotes: "",
+    EstimatedTurnaroundDays: "",
     FireCode: "",
     FireCodeNotes: "",
     ResidentialCode: "",
     ResidentialCodeNotes: "",
     WindCode: "",
     WindCodeNotes: "",
-    DocumentSubmissionMethod: "",
     DocumentSubmissionMethodNotes: "",
+    PermitIssueMethodMethodNotes: "",
     FileFolderURL: "",
     URL: "",
     Description: "",
     AHJLevelCode: "",
     RecordID: "",
     Address: null,
+    AHJInspections: [],
     Contacts: [],
-    EngineeringReviewRequirements: []
+    DocumentSubmissionMethods: [],
+    EngineeringReviewRequirements: [],
+    FeeStructures: [],
+    PermitIssueMethods: []
   },
   CONTACT_FIELDS: {
     RecordID: "",
@@ -76,17 +81,40 @@ export default {
     RecordID: "",
     EngineeringReviewType: "",
     RequirementLevel: "",
-    RequirementLevelNotes: "",
+    RequirementNotes: "",
     StampType: "",
     Description: ""
+  },
+  FEESTRUCTURE_FIELDS: {
+    RecordID: "",
+    Description: "",
+    FeeStructureName: "",
+    FeeStructureType: ""
+  },
+  AHJINSPECTION_FIELDS: {
+    AHJInspectionName: "",
+    AHJInspectionNotes: "",
+    Description: "",
+    FileFolderURL: "",
+    InspectionType: "",
+    TechnicianRequired: "",
+    Contacts: []
+  },
+  DOCUMENTSUBMISSIONMETHOD_FIELDS: {
+    RecordID: "",
+    DocumentSubmissionMethod: ""
+  },
+  PERMITSUBMISSIONMETHOD_FIELDS: {
+    RecordID: "",
+    PermitIssueMethod: ""
   },
   CHOICE_FIELDS: {
     AHJ: {
       AHJLevelCode: [
-        { value: "", text: "AHJ Level Code"},
-        { value: "040", text: "State (040)"},
-        { value: "050", text: "County (050)"},
-        { value: "162", text: "Place (162)"}
+        { value: "", text: "AHJ Level Code" },
+        { value: "040", text: "State (040)" },
+        { value: "050", text: "County (050)" },
+        { value: "162", text: "Place (162)" }
       ],
       BuildingCode: [
         { value: "", text: "" },
@@ -129,11 +157,23 @@ export default {
         { value: "ASCE710", text: "ASCE7-10" },
         { value: "ASCE705", text: "ASCE7-05" },
         { value: "SpecialWindZone", text: "Special Wind Zone" }
-      ],
+      ]
+    },
+    DocumentSubmissionMethod: {
       DocumentSubmissionMethod: [
         { value: "", text: "" },
         { value: "Epermitting", text: "Epermitting" },
         { value: "Email", text: "Email" },
+        { value: "InPerson", text: "In Person" },
+        { value: "SolarApp", text: "SolarApp" }
+      ]
+    },
+    PermitIssueMethod: {
+      PermitIssueMethod: [
+        { value: "", text: "" },
+        { value: "Epermitting", text: "Epermitting" },
+        { value: "Email", text: "Email" },
+        { value: "InPerson", text: "In Person" },
         { value: "SolarApp", text: "SolarApp" }
       ]
     },
@@ -211,9 +251,31 @@ export default {
         { value: "Notary", text: "Notary" }
       ]
     },
+    FeeStructure: {
+      FeeStructureType: [
+        { value: "", text: "" },
+        { value: "Flat", text: "Flat" },
+        { value: "SystemSize", text: "System Size" }
+      ]
+    },
+    AHJInspection: {
+      AHJInspectionType: [
+        { value: "", text: "" },
+        { value: "RoughIn", text: "Rough In" },
+        { value: "Final", text: "Final" },
+        { value: "Windstorm", text: "Windstorm" },
+        { value: "Electrical", text: "Electrical" },
+        { value: "Structural", text: "Structural" }
+      ],
+      TechnicianRequired: [
+        { value: "", text: "" },
+        { value: "True", text: "True" },
+        { value: "False", text: "False" }
+      ]
+    },
     APIEditViewMode: [
       { value: "latest", text: "Latest Edits" },
-      { value: "confirmed", text: "Confirmed Edits"}
+      { value: "confirmed", text: "Confirmed Edits" }
     ]
   },
   MAP_INIT_CENTER: [38, -98],

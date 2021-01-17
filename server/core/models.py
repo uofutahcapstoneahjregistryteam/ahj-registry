@@ -553,7 +553,7 @@ class Edit(models.Model):
         if self.RecordType == 'AHJ':
             record = AHJ.objects.filter(AHJID=self.RecordID)
         elif self.RecordType == 'FeeStructure':
-            record = AHJ.objects.filter(FeeStructureID=self.RecordID)
+            record = FeeStructure.objects.filter(FeeStructureID=self.RecordID)
         else:
             record = apps.get_model('core', self.RecordType).objects.filter(id=self.RecordID)
         return record

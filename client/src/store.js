@@ -108,6 +108,9 @@ export default new Vuex.Store({
       state.apiData = [];
       state.ahjCount = "";
     },
+    modifyApiDataAHJList(state, payload) {
+      Vue.set(state.apiData.results.ahjlist, payload.index, payload.newahj);
+    },
     setShowLoginModal(state, payload) {
       state.showLoginModal = payload;
     },

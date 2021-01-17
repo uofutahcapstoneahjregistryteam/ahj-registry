@@ -158,7 +158,6 @@ class AHJInspectionSerializer(serializers.Serializer):
 
 
 class EngineeringReviewRequirementSerializer(serializers.Serializer):
-    EngineeringReviewRequirementID = EditSerializerHelper(source='*', required=False)
     RequirementLevel = EditSerializerHelper(source='*', required=False)
     RequirementNotes = EditSerializerHelper(source='*', required=False)
     StampType = EditSerializerHelper(source='*', required=False)
