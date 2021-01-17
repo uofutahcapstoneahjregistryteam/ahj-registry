@@ -524,12 +524,15 @@ class Edit(models.Model):
         if self.RecordType == 'AHJ':
             record = AHJ.objects.create()
             self.RecordID = record.AHJID
+        elif self.RecordType == 'FeeStructure':
+            if self.RecordID != '':
+                FeeStructure.objects.create(**{'FeeStructureID': self.RecordID, self.ParentRecordType: self.get_parent()})
+            else:
+                record = FeeStructure.objects.create(**{self.ParentRecordType: self.get_parent()})
+                self.RecordID = record.FeeStructureID
         else:
             record = apps.get_model('core', self.RecordType).objects.create(**{self.ParentRecordType: self.get_parent()})
-            if self.RecordType == 'FeeStructure':
-                self.RecordID = record.FeeStructureID
-            else:
-                self.RecordID = record.id
+            self.RecordID = record.id
         self.Value = self.RecordID
         self.save()
 

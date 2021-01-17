@@ -391,7 +391,7 @@
                             <label>{{ AHJ.FeeStructures[i][nameFeeStructure] }}</label>
                           </b-col>
                           <b-col cols="8" v-else>
-                            <b-form-input v-if="nameFeeStructure === 'RecordID' && AHJ.FeeStructures[i][nameFeeStructure] === ''" v-model="AHJ.FeeStructures[i][nameFeeStructure]" type="text" placeholder="Enter a UUID (leave blank to generate one)..." />
+                            <b-form-input v-if="nameFeeStructure === 'RecordID' && (beforeEditAHJRecord.FeeStructures[i] ? !checkEditMade(beforeEditAHJRecord.FeeStructures[i], AHJ.FeeStructures[i], nameFeeStructure) : true)" v-model="AHJ.FeeStructures[i][nameFeeStructure]" type="text" placeholder="Enter a UUID (leave blank to generate one)..." />
                             <label v-else-if="nameFeeStructure === 'RecordID'">{{ AHJ.FeeStructures[i][nameFeeStructure] }}</label>
                             <b-form-select v-else-if="choiceFields.FeeStructure[nameFeeStructure]" v-model="AHJ.FeeStructures[i][nameFeeStructure]" :options="choiceFields.FeeStructure[nameFeeStructure]" />
                             <b-form-input v-else v-model="AHJ.FeeStructures[i][nameFeeStructure]" type="text" :placeholder="getBFormInputPlaceholder(nameFeeStructure)" />
@@ -654,11 +654,14 @@ export default {
         return result;
       }
     },
-    postCreate(RecordType, fields, ParentID, ParentRecordType) {
+    postCreate(RecordType, fields, ParentID, ParentRecordType, subRecordID) {
       let createEditObject = {EditType: "create", RecordType: RecordType}
       if (ParentID && ParentRecordType) {
         createEditObject["ParentID"] = ParentID;
         createEditObject["ParentRecordType"] = ParentRecordType;
+      }
+      if (RecordType === "FeeStructure" && subRecordID) {
+        createEditObject["RecordID"] = subRecordID;
       }
       axios.post(this.$store.state.apiURL + "edit/submit/", createEditObject,
         {
@@ -683,10 +686,10 @@ export default {
             }
             for (let i = 0; i < field.length; i++) {
               let subRecordID = field[i]["RecordID"];
-              if (subRecordID) {
+              if (subRecordID && (beforeEditFields[key][i] ? subRecordID === beforeEditFields[key][i]["RecordID"] : false)) {
                 this.postUpdate(this.getSingularRecordType(key), field[i], subRecordID, beforeEditFields[key][i]);
               } else {
-                this.postCreate(this.getSingularRecordType(key), field[i], RecordID, RecordType);
+                this.postCreate(this.getSingularRecordType(key), field[i], RecordID, RecordType, subRecordID);
               }
             }
           } else if (this.isObject(field)) {
@@ -707,7 +710,6 @@ export default {
           }
         }
       });
-      console.log(updateEditObjects);
       if (updateEditObjects.length > 0) {
         axios.post(this.$store.state.apiURL + "edit/submit/", updateEditObjects,
           {
@@ -715,21 +717,6 @@ export default {
             Authorization: this.$store.state.loginStatus.authToken
           }
         }).then(response => {
-          axios.get(this.$store.state.apiURL + "ahj/" + this.AHJ.RecordID + "/?view=latest", {
-            headers: {
-              Authorization: this.$store.state.loginStatus.authToken
-            }
-          }).then(response => {
-            this.AHJ = this.setAHJFieldsFromResponse(response.data);
-            console.log(response.data);
-            let storeAHJList = this.$store.state.apiData.results.ahjlist;
-            for (let i = 0; i < storeAHJList.length; i++) {
-              if (storeAHJList[i].AHJID.Value === response.data.AHJID.Value) {
-                this.$store.commit("modifyApiDataAHJList", { index: i, newahj: response.data})
-              }
-            }
-            this.setTabCounts();
-          });
         }).catch(error => {
         });
       }
@@ -923,7 +910,7 @@ export default {
       return result;
     },
     checkEditMade(before, after, field) {
-      return before[field] === after[field]
+      return before[field] === after[field];
     },
     isArray(item) {
       return item.constructor === Array;
@@ -934,7 +921,7 @@ export default {
     getBFormInputPlaceholder(fieldName) {
       return "Enter a " + this.formatFieldNames(fieldName) + "...";
     },
-    getTabTitle(type, index) {
+    getTabTitle(type) {
       type += ".RecordID";
       let RecordID = type.split(/[\[\].]/).filter(i => i !== "").reduce((o, i) => {
         if (!o || !o[i]) {
@@ -943,7 +930,6 @@ export default {
           return o[i];
         }
       }, this.AHJ);
-      // let RecordID = this.AHJ[type + "s"][index].RecordID;
       if (RecordID) {
         return RecordID;
       }
@@ -975,12 +961,12 @@ export default {
     modes() {
       if(this.$store.state.loginStatus["isSuper"]) {
         return [
-          { value: "update", text: "Edit an existing AHJ..."},
-          { value: "create", text: "Submit a new AHJ..."}
+          { value: "update", text: "Edit an existing AHJ..." },
+          { value: "create", text: "Submit a new AHJ..." }
         ];
       } else {
         return [
-          { value: "update", text: "Edit an existing AHJ..."}
+          { value: "update", text: "Edit an existing AHJ..." }
         ];
       }
     }
